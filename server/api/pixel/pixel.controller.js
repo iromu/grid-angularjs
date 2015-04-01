@@ -81,14 +81,31 @@ function _index(res, re) {
       }
       if (pixels.length == 0 && !re) {
         Pixel.find({}).remove(function () {
-          for (var x = 0; x < width; x++) {
-            for (var y = 0; y < height; y++) {
-              var r = Math.random() * 256 | 0;
-              var g = Math.random() * 256 | 0;
-              var b = Math.random() * 256 | 0;
-              Pixel.create({x: x, y: y, r: r, g: g, b: b, a: 255});
+          fs.readFile(__dirname + '/lena.png', function (err, lena) {
+            if (err) throw err;
+            var img = new Image;
+            img.src = lena;
+
+            var canvas = new Canvas(width, height);
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            for (var x = 0; x < width; x++) {
+              for (var y = 0; y < height; y++) {
+                var d = ctx.getImageData(x, y, 1, 1);
+                Pixel.create({x: x, y: y, r: d.data[0], g: d.data[1], b: d.data[2], a: d.data[3]});
+              }
             }
-          }
+          });
+
+
+          //for (var x = 0; x < width; x++) {
+          //  for (var y = 0; y < height; y++) {
+          //    var r = Math.random() * 256 | 0;
+          //    var g = Math.random() * 256 | 0;
+          //    var b = Math.random() * 256 | 0;
+          //    Pixel.create({x: x, y: y, r: r, g: g, b: b, a: 255});
+          //  }
+          //}
           _index(res, true);
         });
       }
