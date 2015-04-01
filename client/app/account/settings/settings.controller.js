@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('parallelJsApp')
+angular.module('gridApp')
   .controller('SettingsCtrl', function ($scope, User, Auth) {
     $scope.errors = {};
 

@@ -5,7 +5,7 @@
 module.exports = {
   // MongoDB connection options
   mongo: {
-    uri: 'mongodb://localhost/paralleljs-dev'
+    uri: 'mongodb://localhost/grid-dev'
   },
 
   seedDB: true

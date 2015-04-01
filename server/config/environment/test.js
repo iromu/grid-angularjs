@@ -5,6 +5,6 @@
 module.exports = {
   // MongoDB connection options
   mongo: {
-    uri: 'mongodb://localhost/paralleljs-test'
+    uri: 'mongodb://localhost/grid-test'
   }
 };

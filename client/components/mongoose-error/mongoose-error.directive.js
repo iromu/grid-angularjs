@@ -3,7 +3,7 @@
 /**
  * Removes server error when user updates input
  */
-angular.module('parallelJsApp')
+angular.module('gridApp')
   .directive('mongooseError', function () {
     return {
       restrict: 'A',

@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('parallelJsApp', [
+angular.module('gridApp', [
   'ngCookies',
   'ngResource',
   'ngSanitize',

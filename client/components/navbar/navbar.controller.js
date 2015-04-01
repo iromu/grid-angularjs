@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('parallelJsApp')
+angular.module('gridApp')
   .controller('NavbarCtrl', function ($scope, $location, Auth) {
     $scope.menu = [{
       'title': 'Home',

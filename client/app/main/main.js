@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('parallelJsApp')
+angular.module('gridApp')
   .config(function ($stateProvider) {
     $stateProvider
       .state('main', {
@@ -9,3 +9,4 @@ angular.module('parallelJsApp')
         controller: 'MainCtrl'
       });
   });
+

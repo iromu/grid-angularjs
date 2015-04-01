@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('parallelJsApp')
+angular.module('gridApp')
   .factory('Modal', function ($rootScope, $modal) {
     /**
      * Opens a modal

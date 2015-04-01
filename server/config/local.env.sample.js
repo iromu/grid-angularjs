@@ -7,7 +7,7 @@
 
 module.exports = {
   DOMAIN:           'http://localhost:9000',
-  SESSION_SECRET:   'paralleljs-secret',
+  SESSION_SECRET:   'grid-secret',
 
   // Control debug level for modules using visionmedia/debug
   DEBUG: ''
