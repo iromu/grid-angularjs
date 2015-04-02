@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('gridApp')
-  .factory('socket', function(socketFactory) {
+  .factory('socket', function (socketFactory) {
 
     // socket.io now auto-configures its connection when we ommit a connection url
     var ioSocket = io('', {
@@ -76,6 +76,7 @@ angular.module('gridApp')
           _.remove(array, {_id: item._id});
           cb(event, item, array);
         });
+
       },
 
       /**
@@ -85,7 +86,37 @@ angular.module('gridApp')
        */
       unsyncUpdates: function (modelName) {
         socket.removeAllListeners(modelName + ':save');
+        socket.removeAllListeners(modelName + ':update');
         socket.removeAllListeners(modelName + ':remove');
+        socket.removeAllListeners('snapshot');
+        socket.removeAllListeners('pixel:updateBatch');
+      },
+      info: function () {
+        socket.emit('info');
+      },
+      onSnapshot: function (cb) {
+        cb = cb || angular.noop;
+        socket.on('snapshot', function () {
+          cb();
+        });
+      },
+      onPixelBatchUpdate: function (cb) {
+        cb = cb || angular.noop;
+        socket.on('pixel:batch:update', function (items) {
+          cb(items);
+        });
+      },
+      onPixelBufferResponse: function (cb) {
+        cb = cb || angular.noop;
+        socket.on('pixel:buffer:response', function (items) {
+          cb(items);
+        });
+      },
+      putPixels: function (pixels) {
+        socket.emit('pixel:put', pixels);
+      },
+      requestPixelBuffer: function () {
+        socket.emit('pixel:buffer:request');
       }
     };
   });

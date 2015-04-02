@@ -17,9 +17,11 @@ var fs = require('fs');
 var path = require('path');
 var width = 100;
 var height = 100;
+var socket;
+
+
 
 exports.snapshot = function (req, res) {
-
   Pixel.find(function (err, pixels) {
     if (err) {
       return handleError(res, err);
@@ -45,84 +47,9 @@ exports.snapshot = function (req, res) {
   });
 }
 
-exports.index = function (req, res) {
-  _index(res, false);
-};
-
-// Updates an existing pixel in the DB.
-exports.update = function (req, res) {
-  if (req.body._id) {
-    delete req.body._id;
-  }
-  if (Array.isArray(req.body)) {
-    req.body.forEach(function (item) {
-      Pixel.findById(item._id, function (err, pixel) {
-        if (!err && pixel) {
-          var updated = _.merge(pixel, item);
-          updated.processed = true;
-          updated.save(errorCallback);
-        }
-      });
-    });
-  }
-  return res.send(200);
-};
-
 function handleError(res, err) {
   return res.send(500, err);
 }
 
-function _index(res, re) {
-  Pixel.find({processed: {'$ne': true}})
-    .limit(100)
-    .exec(function (err, pixels) {
-      if (err) {
-        return handleError(res, err);
-      }
-      if (pixels.length == 0 && !re) {
-        Pixel.find({}).remove(function () {
-          fs.readFile(__dirname + '/lena.png', function (err, lena) {
-            if (err) throw err;
-            var img = new Image;
-            img.src = lena;
-
-            var canvas = new Canvas(width, height);
-            var ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            for (var x = 0; x < width; x++) {
-              for (var y = 0; y < height; y++) {
-                var d = ctx.getImageData(x, y, 1, 1);
-                Pixel.create({x: x, y: y, r: d.data[0], g: d.data[1], b: d.data[2], a: d.data[3]});
-              }
-            }
-          });
 
 
-          //for (var x = 0; x < width; x++) {
-          //  for (var y = 0; y < height; y++) {
-          //    var r = Math.random() * 256 | 0;
-          //    var g = Math.random() * 256 | 0;
-          //    var b = Math.random() * 256 | 0;
-          //    Pixel.create({x: x, y: y, r: r, g: g, b: b, a: 255});
-          //  }
-          //}
-          _index(res, true);
-        });
-      }
-      else {
-        var ids = pixels.map(function (pixel) {
-          return pixel._id;
-        });
-
-        Pixel.update({_id: {$in: ids}}, {$set: {processed: true}}, {multi: true}, errorCallback);
-
-        return res.status(200).json(pixels);
-      }
-    });
-};
-
-function errorCallback(err) {
-  if (err) {
-    return handleError(res, err);
-  }
-}

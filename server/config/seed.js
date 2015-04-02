@@ -5,6 +5,7 @@
 
 'use strict';
 
+var _ = require('lodash');
 var Pixel = require('../api/pixel/pixel.model');
 var User = require('../api/user/user.model');
 
@@ -13,24 +14,10 @@ var Image = Canvas.Image;
 var fs = require('fs');
 
 Pixel.find({}).remove(function () {
-
-  var width = 100;
-  var height = 100;
-
-  fs.readFile(__dirname + '/../api/pixel/lena.png', function (err, lena) {
-    if (err) throw err;
-    var img = new Image;
-    img.src = lena;
-
-    var canvas = new Canvas(width, height);
-    var ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, width, height);
-    for (var x = 0; x < width; x++) {
-      for (var y = 0; y < height; y++) {
-        var d = ctx.getImageData(x, y, 1, 1);
-        Pixel.create({x: x, y: y, r: d.data[0], g: d.data[1], b: d.data[2], a: d.data[3]});
-      }
-    }
+  var data = fs.readFileSync(__dirname + '/../api/pixel/lena.json');
+  var arr = JSON.parse(data);
+  Pixel.collection.insert(arr, function () {
+    console.log('finished populating pixels');
   });
 });
 
@@ -51,3 +38,4 @@ User.find({}).remove(function () {
     }
   );
 });
+

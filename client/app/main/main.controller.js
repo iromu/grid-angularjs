@@ -2,61 +2,102 @@
 
 angular.module('gridApp')
   .controller('MainCtrl', function ($scope, $http, socket) {
-    $scope.awesomePixels = [];
+    $scope.pixelBuffer = [];
+    var socketListening = false;
 
+    var process = function (pixels) {
+      if (Array.isArray(pixels) && pixels.length > 0) {
+        var element = $('#snapshot')[0];
+        var c = element.getContext('2d');
+        var imageData = c.createImageData(1, 1);
+        var arrayProcessed = [];
 
-    var syncUpdates = function () {
-      $http.get('/api/pixels').success(function (awesomePixels) {
-        process(awesomePixels);
-        $scope.awesomePixels = awesomePixels;
-        socket.syncUpdates('pixel', $scope.awesomePixels, function (event, item, array) {
-          if ('created' === event) {
-            var element = $('#snapshot')[0];
-            var c = element.getContext("2d");
-            var imageData = c.createImageData(1, 1);
-
-            processPixel(c, imageData, item);
-          }
-          else if ('updated' === event) {
-            var element = $('#snapshot')[0];
-            var c = element.getContext("2d");
-            var imageData = c.createImageData(1, 1);
-            setPixel(imageData, 0, 0, item.r, item.g, item.b, 255); // 255 opaque
-            c.putImageData(imageData, item.x, item.y); // at coords 0,0
-          }
+        pixels.forEach(function (item) {
+          arrayProcessed.push(processPixel(c, imageData, item));
         });
-      });
+
+        $scope.putPixels(arrayProcessed);
+        $scope.loadPixelBuffer();
+      }
     };
 
-    $scope.loadSnapshot = function () {
-      var c = $('#snapshot')[0].getContext("2d");
-      c.clearRect ( 0 , 0 , $('#snapshot')[0].width, $('#snapshot')[0].height );
-      c.fillText('Loading...', 50, 50);
-      var drawing = new Image();
-      drawing.src = "api/pixels/snapshot";
-      drawing.onload = function () {
-        c.drawImage(drawing, 0, 0);
-        syncUpdates();
-      };
-    }
+    var addListeners = function () {
 
-    var process = function (array) {
-      if (array.length > 0) {
-        var element = $('#snapshot')[0];
-        var c = element.getContext("2d");
-        var imageData = c.createImageData(1, 1);
-        var array_p = [];
-
-        array.forEach(function (item) {
-          array_p.push(processPixel(c, imageData, item));
-        });
-        $scope.updatePixels(array_p);
-        $http.get('/api/pixels').success(function (awesomePixels) {
-          process(awesomePixels);
-        });
-      } else {
+      socket.onSnapshot(function () {
         $scope.loadSnapshot();
-      }
+      });
+
+      socket.onPixelBatchUpdate(function (items) {
+        pixelBatchUpdate(items);
+      });
+
+      socket.onPixelBufferResponse(function (items) {
+        process(items);
+      });
+
+      socket.syncUpdates('pixel', $scope.pixelBuffer, function (event, item) {
+
+        if ('update' === event) {
+          //updatePixel(item);
+        }
+      });
+      socketListening = true;
+
+    };
+
+    $scope.loadPixelBuffer = function () {
+      socket.requestPixelBuffer();
+    };
+
+    $scope.putPixels = function (pixels) {
+      socket.putPixels(pixels);
+    };
+
+    $scope.$on('$destroy', function () {
+      socketListening = false;
+      socket.unsyncUpdates('pixel');
+    });
+
+    $scope.loadSnapshot = function () {
+      var snapshot = $('#snapshot')[0];
+      var c = snapshot.getContext('2d');
+
+      c.clearRect(0, 0, snapshot.width, snapshot.height);
+      c.fillText('Loading...', 20, 50);
+
+      var drawing = new Image();
+      drawing.src = 'api/pixels/snapshot';
+      drawing.onload = function () {
+
+        c.drawImage(drawing, 0, 0);
+
+        if (!socketListening) {
+          addListeners();
+        }
+
+        $scope.loadPixelBuffer();
+
+      };
+    };
+
+    var pixelBatchUpdate = function (pixels) {
+      var element = $('#snapshot')[0];
+      var c = element.getContext('2d');
+      var imageData = c.createImageData(1, 1);
+
+      pixels.forEach(function (item) {
+        setPixel(imageData, 0, 0, item.r, 255, item.b, item.a);
+        c.putImageData(imageData, item.x, item.y);
+      });
+
+    };
+
+    var updatePixel = function (item) {
+      var element = $('#snapshot')[0];
+      var c = element.getContext('2d');
+      var imageData = c.createImageData(1, 1);
+      setPixel(imageData, 0, 0, item.r, 255, 255, item.a);
+      c.putImageData(imageData, item.x, item.y);
     };
 
     var processPixel = function (c, imageData, item) {
@@ -66,7 +107,7 @@ angular.module('gridApp')
       item.g = grayscalecolor;
       item.b = grayscalecolor;
 
-      setPixel(imageData, 0, 0, item.r, item.g, item.b, 255); // 255 opaque
+      setPixel(imageData, 0, 0, 255, item.g, item.b, item.a); // 255 opaque
       c.putImageData(imageData, item.x, item.y); // at coords 0,0
 
       return item;
@@ -74,33 +115,11 @@ angular.module('gridApp')
 
     var setPixel = function (imageData, x, y, r, g, b, a) {
       var index = (x + y * imageData.width) * 4;
-      imageData.data[index + 0] = r;
+      imageData.data[index] = r;
       imageData.data[index + 1] = g;
       imageData.data[index + 2] = b;
       imageData.data[index + 3] = a;
     };
 
-    $scope.addPixel = function () {
-      if ($scope.newPixel === '') {
-        return;
-      }
-      $http.post('/api/pixels', {name: $scope.newPixel});
-      $scope.newPixel = '';
-    };
-
-    $scope.deletePixel = function (pixel) {
-      $http.delete('/api/pixels/' + pixel._id);
-    };
-
-    $scope.updatePixel = function (pixel) {
-      $http.put('/api/pixels/' + pixel._id, pixel);
-    };
-
-    $scope.updatePixels = function (pixels) {
-      $http.put('/api/pixels/', pixels);
-    };
-
-    $scope.$on('$destroy', function () {
-      socket.unsyncUpdates('pixel');
-    });
   });
+

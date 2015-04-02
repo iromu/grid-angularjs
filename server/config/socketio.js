@@ -6,19 +6,21 @@
 
 var config = require('./environment');
 
+var connectedUsers = {};
+
 // When the user disconnects.. perform this
 function onDisconnect(socket) {
 }
 
 // When the user connects.. perform this
-function onConnect(socket) {
+function onConnect(socket, socketio) {
   // When the client emits 'info', this listens and executes
   socket.on('info', function (data) {
-    console.info('[%s] %s', socket.address, JSON.stringify(data, null, 2));
+    console.info('[%s] INFO %s', socket.address, JSON.stringify(data, null, 2));
   });
-
+  //connectedUsers[USER_NAME_HERE] = socket;
   // Insert sockets below
-  require('../api/pixel/pixel.socket').register(socket);
+  require('../api/pixel/pixel.socket').register(socket, socketio);
 }
 
 module.exports = function (socketio) {
@@ -47,11 +49,12 @@ module.exports = function (socketio) {
     // Call onDisconnect.
     socket.on('disconnect', function () {
       onDisconnect(socket);
-      console.info('[%s] DISCONNECTED', socket.address);
+      console.info('[%s] DISCONNECTED', socket.id);
     });
 
+
+    console.info('[%s] CONNECTED', socket.id);
     // Call onConnect.
-    onConnect(socket);
-    console.info('[%s] CONNECTED', socket.address);
+    onConnect(socket,socketio);
   });
 };
