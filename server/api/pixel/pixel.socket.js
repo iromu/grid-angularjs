@@ -23,7 +23,7 @@ exports.register = function (s, sio) {
     var ids = pixels.map(function (pixel) {
       return pixel._id;
     });
-    Pixel.update({_id: {$in: ids}}, {$set: {processed: true}}, {multi: true}, callback);
+    Pixel.update({_id: {$in: ids}}, {$set: {locked: true}, $inc: {version: 1}}, {multi: true}, callback);
   };
 
   var reloadBuffer = function () {
@@ -34,8 +34,13 @@ exports.register = function (s, sio) {
         }
         var arr = JSON.parse(data);
 
+        var imageName = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 36);
+        arr.map(function (item) {
+          item.image = imageName;
+          return item;
+        });
         Pixel.collection.insert(arr, function () {
-          io.sockets.emit('snapshot');
+          io.sockets.emit('snapshot', imageName);
         });
       });
     });
@@ -47,7 +52,7 @@ exports.register = function (s, sio) {
 
   socket.on('pixel:buffer:request', function () {
     //console.info('[%s] pixel:buffer:request', socket.id);
-    Pixel.find({processed: {'$ne': true}})
+    Pixel.find({processed: {'$ne': true}, locked: {'$ne': true}})
       .limit(500)
       .exec(function (err, pixels) {
 
@@ -70,6 +75,8 @@ exports.register = function (s, sio) {
         if (!err && pixel) {
           var updated = _.merge(pixel, item);
           updated.processed = true;
+          updated.locked = false;
+          updated.version++;
           updated.save();
         }
       });
@@ -78,7 +85,7 @@ exports.register = function (s, sio) {
     //console.info('[%s] updateBatch', socket.id);
     socket.broadcast.emit('pixel:batch:update', pixels);
   });
-}
+};
 
 exports.onConnect = function (cb) {
   this.onConnectCallback = cb;

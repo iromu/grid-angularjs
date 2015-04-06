@@ -13,9 +13,15 @@ var Canvas = require('canvas');
 var Image = Canvas.Image;
 var fs = require('fs');
 
+var imageName = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 36);
+
 Pixel.find({}).remove(function () {
   var data = fs.readFileSync(__dirname + '/../api/pixel/lena.json');
   var arr = JSON.parse(data);
+  arr.map(function (item) {
+    item.image = imageName;
+    return item;
+  });
   Pixel.collection.insert(arr, function () {
     console.log('finished populating pixels');
   });

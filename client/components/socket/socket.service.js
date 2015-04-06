@@ -60,7 +60,6 @@ angular.module('gridApp')
           // otherwise just add item to the collection
           if (oldItem) {
             array.splice(index, 1, item);
-            event = 'updated';
           } else {
             array.push(item);
           }
@@ -88,35 +87,9 @@ angular.module('gridApp')
         socket.removeAllListeners(modelName + ':save');
         socket.removeAllListeners(modelName + ':update');
         socket.removeAllListeners(modelName + ':remove');
-        socket.removeAllListeners('snapshot');
-        socket.removeAllListeners('pixel:updateBatch');
       },
       info: function () {
         socket.emit('info');
-      },
-      onSnapshot: function (cb) {
-        cb = cb || angular.noop;
-        socket.on('snapshot', function () {
-          cb();
-        });
-      },
-      onPixelBatchUpdate: function (cb) {
-        cb = cb || angular.noop;
-        socket.on('pixel:batch:update', function (items) {
-          cb(items);
-        });
-      },
-      onPixelBufferResponse: function (cb) {
-        cb = cb || angular.noop;
-        socket.on('pixel:buffer:response', function (items) {
-          cb(items);
-        });
-      },
-      putPixels: function (pixels) {
-        socket.emit('pixel:put', pixels);
-      },
-      requestPixelBuffer: function () {
-        socket.emit('pixel:buffer:request');
       }
     };
   });
