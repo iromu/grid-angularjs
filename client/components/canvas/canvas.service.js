@@ -3,14 +3,6 @@
 angular.module('gridApp')
   .factory('canvasViewService', function () {
 
-    //var updatePixel = function (item) {
-    //  var element = $('#snapshot')[0];
-    //  var c = element.getContext('2d');
-    //  var imageData = c.createImageData(1, 1);
-    //  setPixel(imageData, 0, 0, item.r, 255, 255, item.a);
-    //  c.putImageData(imageData, item.x, item.y);
-    //};
-
     var processPixel = function (c, imageData, item) {
 
       var grayscalecolor = (item.r + item.g + item.b) / 3;

@@ -3,8 +3,11 @@
 angular.module('gridApp')
   .controller('NavbarCtrl', function ($scope, $location, Auth) {
     $scope.menu = [{
-      'title': 'Home',
+      'title': 'Image processing',
       'link': '/'
+    }, {
+      'title': 'Text recognition',
+      'link': '/ml/nn'
     }];
 
     $scope.isCollapsed = true;

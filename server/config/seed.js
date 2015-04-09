@@ -15,17 +15,47 @@ var fs = require('fs');
 
 var imageName = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 36);
 
-Pixel.find({}).remove(function () {
-  var data = fs.readFileSync(__dirname + '/../api/pixel/lena.json');
+var LENA_JSON = __dirname + '/../api/pixel/lena.json';
+
+var readLenaFile = function () {
+  var data = fs.readFileSync(LENA_JSON);
   var arr = JSON.parse(data);
-  arr.map(function (item) {
-    item.image = imageName;
-    return item;
-  });
   Pixel.collection.insert(arr, function () {
-    console.log('finished populating pixels');
+    console.log('finished populating pixels from ' + LENA_JSON);
   });
-});
+};
+Pixel.find({}).remove(function () {
+
+    if (!fs.existsSync(LENA_JSON)) {
+
+      var lena = fs.readFileSync(__dirname + '/../api/pixel/lena.png');
+      var img = new Image;
+      img.src = lena;
+
+      var canvas = new Canvas(img.width, img.height);
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, img.width, img.height);
+
+
+      var pixels = [];
+      for (var x = 0; x < img.width; x++) {
+        for (var y = 0; y < img.height; y++) {
+          var d = ctx.getImageData(x, y, 1, 1);
+          var pixel = {x: x, y: y, r: d.data[0], g: d.data[1], b: d.data[2], a: d.data[3], image: imageName};
+          //Pixel.create(pixel);
+          pixels.push(pixel);
+        }
+      }
+
+      Pixel.collection.insert(pixels, {multi: true}, function () {
+        fs.writeFileSync(LENA_JSON, JSON.stringify(pixels));
+      });
+
+    } else
+      readLenaFile();
+  }
+)
+;
 
 User.find({}).remove(function () {
   User.create({

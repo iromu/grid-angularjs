@@ -19,8 +19,6 @@ var width = 100;
 var height = 100;
 var socket;
 
-
-
 exports.snapshot = function (req, res) {
   Pixel.find(function (err, pixels) {
     if (err) {
@@ -45,7 +43,31 @@ exports.snapshot = function (req, res) {
 
     return stream.pipe(res);
   });
-}
+};
+
+// Updates an existing pixel in the DB.
+exports.update = function (req, res) {
+  if (req.body._id) {
+    delete req.body._id;
+  }
+  if (Array.isArray(req.body)) {
+    req.body.forEach(function (item) {
+      Pixel.findById(item._id, function (err, pixel) {
+        if (!err && pixel) {
+          var updated = _.merge(pixel, item);
+          updated.processed = true;
+          updated.locked = true;
+          updated.save(function (err) {
+            if (err) {
+              return handleError(res, err);
+            }
+          });
+        }
+      });
+    });
+  }
+  return res.send(200);
+};
 
 function handleError(res, err) {
   return res.send(500, err);
