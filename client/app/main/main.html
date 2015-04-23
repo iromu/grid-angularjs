@@ -21,6 +21,10 @@
       <p class="help-block"><strong>{{ pixelsExternalProcessed | number:0}}</strong> Pixels processed by others</p>
     </div>
   </div>
+  <div class="input-group">
+    <span class="input-group-addon" id="basic-addon1">Workers</span>
+    <input type="text" class="form-control" ng-model="maxWorkers" aria-describedby="basic-addon1">
+  </div>
   <p class="help-block">
   <pre>{{ lastError}}</pre>
   </p>

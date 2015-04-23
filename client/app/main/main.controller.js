@@ -5,6 +5,7 @@
     .controller('MainCtrl', function ($scope, $log, $http, $filter, pixelSocketService, canvasViewService) {
       $scope.pixelBuffer = [];
       $scope.pixelsReceived = 0;
+      $scope.maxWorkers = 4;
       $scope.pixelsExternalProcessed = 0;
       $scope.serverResponse = '';
       $scope.lastError = '';
@@ -26,7 +27,7 @@
           var c = element.getContext('2d');
           var imageData = c.createImageData(1, 1);
           $scope.pixelsReceived += pixels.length;
-          var p = new Parallel(pixels);
+          var p = new Parallel(pixels, {maxWorkers: $scope.maxWorkers});
           var job = function (item) {
             var grayscalecolor = (item.r + item.g + item.b) / 3;
             item.r = grayscalecolor;
@@ -79,7 +80,7 @@
             process(pixels);
           } else {
             $log.warn('onPixelBufferResponse() empty array received for processing.');
-            setTimeout($scope.loadPixelBuffer, 500);
+            setTimeout($scope.loadPixelBuffer, 1000);
           }
         });
 
