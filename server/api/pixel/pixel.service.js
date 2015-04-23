@@ -79,7 +79,7 @@ exports.getPixels = function (cb, errCb) {
     Pixel
       .find({processed: {'$ne': true}, locked: {'$ne': true}})
       .sort({y: +1})
-      .limit(300)
+      .limit(200)
       .exec(function (err, pixels) {
         if (!Array.isArray(pixels) || pixels.length === 0) {
           Lock.updating = false;

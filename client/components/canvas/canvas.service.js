@@ -3,19 +3,6 @@
 angular.module('gridApp')
   .factory('canvasViewService', function () {
 
-    var processPixel = function (c, imageData, item) {
-
-      var grayscalecolor = (item.r + item.g + item.b) / 3;
-      item.r = grayscalecolor;
-      item.g = grayscalecolor;
-      item.b = grayscalecolor;
-
-      setPixel(imageData, 0, 0, 255, item.g, item.b, item.a); // 255 opaque
-      c.putImageData(imageData, item.x, item.y); // at coords 0,0
-
-      return item;
-    };
-
     var setPixel = function (imageData, x, y, r, g, b, a) {
       var index = (x + y * imageData.width) * 4;
       imageData.data[index] = r;
@@ -63,8 +50,11 @@ angular.module('gridApp')
       pixelBatchUpdate: function (id, pixels) {
         pixelBatchUpdate(id, pixels);
       },
-      processPixel: function (c, imageData, item) {
-        return processPixel(c, imageData, item);
+      drawProcessed: function (c, imageData, items) {
+        items.forEach(function (item) {
+          setPixel(imageData, 0, 0, 255, item.g, item.b, item.a);
+          c.putImageData(imageData, item.x, item.y);
+        });
       },
       loadImage: function (id, url, cb) {
         loadImage(id, url, cb);

@@ -25,14 +25,22 @@
           var element = $('#snapshot')[0];
           var c = element.getContext('2d');
           var imageData = c.createImageData(1, 1);
-          var arrayProcessed = [];
           $scope.pixelsReceived += pixels.length;
-          pixels.forEach(function (item) {
-            arrayProcessed.push(canvasViewService.processPixel(c, imageData, item));
+          var p = new Parallel(pixels);
+          var job = function (item) {
+            var grayscalecolor = (item.r + item.g + item.b) / 3;
+            item.r = grayscalecolor;
+            item.g = grayscalecolor;
+            item.b = grayscalecolor;
+            item.processed = true;
+            return item;
+          };
+          p.map(job).then(function (arrayProcessed) {
+            $scope.putPixels(arrayProcessed);
+            canvasViewService.drawProcessed(c, imageData, arrayProcessed);
+            setTimeout($scope.loadPixelBuffer, 500);
           });
 
-          $scope.putPixels(arrayProcessed);
-          setTimeout($scope.loadPixelBuffer, 500);
         }
       };
 
