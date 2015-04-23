@@ -17,7 +17,8 @@ module.exports = function (grunt) {
     cdnify: 'grunt-google-cdn',
     protractor: 'grunt-protractor-runner',
     injector: 'grunt-asset-injector',
-    buildcontrol: 'grunt-build-control'
+    buildcontrol: 'grunt-build-control',
+    sgrelease: 'grunt-sg-release'
   });
 
   // Time how long tasks take. Can help when optimizing build times
@@ -25,7 +26,19 @@ module.exports = function (grunt) {
 
   // Define the configuration for all the tasks
   grunt.initConfig({
-
+    sg_release: {
+      options: {
+        skipBowerInstall: true,
+        developBranch: 'develop',
+        masterBranch: 'master',
+        files: [
+          'package.json'
+        ],
+        commitMessage: 'Release v%VERSION%',
+        commitFiles: ['-a'], // '-a' for all files
+        pushTo: 'origin'
+      }
+    },
     // Project settings
     pkg: grunt.file.readJSON('package.json'),
     yeoman: {
