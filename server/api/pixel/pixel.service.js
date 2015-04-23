@@ -21,18 +21,24 @@ var getIdsFromPixels = function (pixels) {
 };
 
 var verifyPixels = function (pixels) {
-  var ids = getIdsFromPixels(pixels);
+  var pixelIds = getIdsFromPixels(pixels);
   if (prevPixelIds.length === 0) {
-    prevPixelIds = ids;
+    prevPixelIds = pixelIds;
     return true;
   } else {
+    var diff = _.difference(pixelIds, prevPixelIds);
+    if (_.isEqual(diff, prevPixelIds)) {
+      console.warn('Duplicated ' + diff);
+      console.warn('prevPixelIds ' + prevPixelIds);
+      console.warn('pixelIds ' + pixelIds);
+      return false;
+    }
+    prevPixelIds = prevPixelIds.concat(pixelIds);
     return true;
   }
 };
 
 var lockPixels = function (pixels, callback) {
-
-  //console.info('[%s] lockPixels', socket.id);
   var ids = getIdsFromPixels(pixels);
   Pixel.collection.update({_id: {$in: ids}}, {$set: {locked: true}}, options, function (err, numAffected, raw) {
     if (numAffected === 0) {
@@ -75,33 +81,37 @@ exports.getPixels = function (cb, errCb) {
       .sort({y: +1})
       .limit(300)
       .exec(function (err, pixels) {
-        if (pixels.length === 0) {
+        if (!Array.isArray(pixels) || pixels.length === 0) {
           Lock.updating = false;
           reloadBuffer(errCb);
         } else {
           if (verifyPixels(pixels)) {
             lockPixels(pixels, function () {
-              Lock.updating = false;
               cb(pixels);
+              Lock.updating = false;
             });
+          } else {
+            Lock.updating = false;
+            console.info('duplicated');
+            cb([]);
           }
         }
       });
-    Lock.updating = false;
+
   } else {
+    console.info('locked');
     cb([]);
   }
-}
+};
 
 exports.savePixels = function (pixels, cb) {
   pixels.forEach(function (item) {
     var update = {r: item.r, g: item.g, b: item.b, a: item.a, processed: true, locked: false};
-
-    Pixel.update({_id: item._id}, {$set: update}, function (err) {
+    Pixel.collection.update({_id: item._id}, {$set: update}, function (err) {
       if (err) {
         console.info('UPDATE ERROR %s', JSON.stringify(err, null, 2));
       }
     });
   });
   cb();
-}
+};
