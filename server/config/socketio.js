@@ -13,6 +13,9 @@ var connectedUsers = [];
 
 // When the user disconnects.. perform this
 function onDisconnect(socket) {
+
+  socket.broadcast.emit('socket:disconnect', socket.id);
+
   _.remove(connectedUsers, function (current) {
     return socket.id === current.id;
   });
@@ -21,9 +24,15 @@ function onDisconnect(socket) {
 // When the user connects.. perform this
 function onConnect(socket, socketio) {
   connectedUsers.push(socket);
+
+  socket.broadcast.emit('socket:connect', socket.id);
   // When the client emits 'info', this listens and executes
-  socket.on('info', function (data) {
-    console.info('[%s] INFO %s', socket.address, JSON.stringify(data, null, 2));
+  socket.on('socket:info', function (data) {
+    console.info('[%s] INFO %s', socket.id, JSON.stringify(data, null, 2));
+    var ids = connectedUsers.map(function (connectedUser) {
+      return connectedUser.id;
+    });
+    socket.emit('socket:info', ids);
   });
   //connectedUsers[USER_NAME_HERE] = socket;
   // Insert sockets below

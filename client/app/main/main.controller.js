@@ -10,6 +10,7 @@
       $scope.serverResponse = '';
       $scope.lastError = '';
       $scope.imageName = 'Processing';
+      $scope.totalNodes = [];
 
       var stopRequestingBuffer = false;
       var pixelSocketServiceListening = false;
@@ -46,6 +47,8 @@
       };
 
       var addListeners = function () {
+
+        pixelSocketService.bindArray($scope.totalNodes);
 
         pixelSocketService.onSnapshot(function (imageName) {
           $scope.imageName = 'Processing ' + imageName;
