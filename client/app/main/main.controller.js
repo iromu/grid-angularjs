@@ -140,7 +140,7 @@
           }
           if ($scope.joined === true) {
             $scope.stopRequestingBuffer = false;
-            $scope.loadPixelBuffer();
+            setTimeout($scope.loadPixelBuffer, 2000);
           }
           canvasViewService.clearImage('#preview');
         });

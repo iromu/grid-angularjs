@@ -17,18 +17,22 @@
       </p>
       <p class="help-block"><strong>{{ pixelsExternalProcessed | number:0}}</strong> Pixels</p>
     </div>
-    <div class="col-md-6 col-sm-6  col-xs-12">
-
-      <button type="button" id="toggleButton"
-              class="btn btn-success btn-block animate-hide" ng-click="toggleNetwork()">Join
-      </button>
-
-      <div class="input-group input-group-sm">
-        <span class="input-group-addon" id="input-workers">Workers</span>
+    <form role="form" class="form-horizontal col-md-6 col-sm-6  col-xs-12">
+      <div class="input-group">
+        <span class="input-group-addon" id="input-nodes">Nodes</span>
+        <input type="text" class="form-control" ng-readonly="true" ng-model="totalNodes.length"
+               aria-describedby="input-nodes">
+      </div>
+      <div class="input-group">
+        <span class="input-group-addon" id="input-workers">Web Workers</span>
         <input type="text" class="form-control" ng-model="maxWorkers" aria-describedby="input-workers">
       </div>
-
-    </div>
+      <div>
+        <button type="button" id="toggleButton"
+                class="btn btn-success btn-block animate-hide" ng-click="toggleNetwork()">Join
+        </button>
+      </div>
+    </form>
   </div>
 
   <p class="help-block">
