@@ -377,6 +377,11 @@ module.exports = function (grunt) {
           src: ['generated/*']
         }, {
           expand: true,
+          cwd: 'client/assets/scripts/',
+          dest: '<%= yeoman.dist %>/public/assets/scripts',
+          src: ['*']
+        }, {
+          expand: true,
           dest: '<%= yeoman.dist %>',
           src: [
             'package.json',

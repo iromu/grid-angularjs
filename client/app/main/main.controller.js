@@ -3,7 +3,7 @@
 
   angular.module('gridApp')
     .controller('MainCtrl', function ($scope, $log, $http, $filter, pixelSocketService, canvasViewService) {
-      $scope.pixelBuffer = [];
+      //$scope.pixelBuffer = [];
       $scope.pixelsReceived = 0;
       $scope.maxWorkers = 4;
       $scope.pixelsExternalProcessed = 0;
@@ -74,14 +74,14 @@
         pixelSocketService.onPixelBufferResponse(function (pixels) {
 
           if (Array.isArray(pixels) && pixels.length > 0) {
-            var pixelIds = getIdsFromPixels(pixels);
-            if ($scope.pixelBuffer.length > 0) {
-              var diff = _.difference(pixelIds, $scope.pixelBuffer);
-              if (diff !== $scope.pixelBuffer) {
-                $log.warn('Duplicated ' + pixelIds[0]);
-              }
-            }
-            $scope.pixelBuffer = $scope.pixelBuffer.concat(pixelIds);
+            //var pixelIds = getIdsFromPixels(pixels);
+            //if ($scope.pixelBuffer.length > 0) {
+            //  var diff = _.difference(pixelIds, $scope.pixelBuffer);
+            //  if (diff !== $scope.pixelBuffer) {
+            //    $log.warn('Duplicated ' + pixelIds[0]);
+            //  }
+            //}
+            //$scope.pixelBuffer = $scope.pixelBuffer.concat(pixelIds);
 
             process(pixels);
           } else {

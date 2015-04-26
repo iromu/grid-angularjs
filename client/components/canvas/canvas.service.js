@@ -42,11 +42,42 @@ angular.module('gridApp')
       drawing.onload = function () {
         c.drawImage(drawing, 0, 0);
         cb();
-      };
+       };
+    };
+
+    var getRegion = function (id, region, size) {
+      var w = $(id)[0].width;
+      var row = 1;
+      var col = region;
+
+      var selectX = (col - 1) * size - 1; //1,0 2,29, 3,59
+      selectX = selectX < 0 ? 0 : selectX;
+      selectX = selectX - 1 >= w ? 0 : selectX;
+
+      //12 - 2,2
+
+      var selectY = 0;
+
+      if (selectX - 1 >= w) {
+        selectY = 29;
+      }
+
+      var element = $(id)[0];
+      var c = element.getContext('2d');
+      return c.getImageData(selectX, selectY, 30, 30);
+    };
+
+    var setImageData = function (id, imageData) {
+      var element = $(id)[0];
+      var c = element.getContext('2d');
+      return c.putImageData(imageData, 0, 0);
     };
 
     // Public API here
     return {
+      getRegion: function (id, region, size) {
+        return getRegion(id, region, size);
+      },
       pixelBatchUpdate: function (id, pixels) {
         pixelBatchUpdate(id, pixels);
       },
@@ -61,6 +92,9 @@ angular.module('gridApp')
       },
       clearImage: function (id) {
         clearImage(id);
+      },
+      setImageData: function (id, imageData) {
+        setImageData(id, imageData);
       }
     };
   });
