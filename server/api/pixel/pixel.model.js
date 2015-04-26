@@ -17,5 +17,5 @@ var PixelSchema = new Schema({
   locked: {type: Boolean, index: true}
 });
 
-PixelSchema.index({processed: 1, locked: 1}, {x: 1, y: 1});
+PixelSchema.index({processed: 1, locked: 1, x: 1, y: 1}, {x: 1, y: 1});
 module.exports = mongoose.model('Pixel', PixelSchema);

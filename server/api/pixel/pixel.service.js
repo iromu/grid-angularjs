@@ -12,6 +12,12 @@ var Lock = require('./pixel.lock.js');
 var options = {multi: true};
 
 var prevPixelIds = [];
+var w = 100;
+var h = 100;
+
+var lastX = -1;
+var lastY = 9;
+
 
 var getIdsFromPixels = function (pixels) {
   var ids = pixels.map(function (pixel) {
@@ -76,17 +82,39 @@ var reloadBuffer = function (errCb) {
 exports.getPixels = function (cb, errCb) {
   if (Lock.updating === false) {
     Lock.updating = true;
+
+    //console.info('PRE lastX %s - lastY %s', lastX, lastY);
+    var iteration = (lastX === -1) ? false : (lastX + 1) % w;
+    var selectX = (iteration === 0) ? 9 : lastX + 10;
+    var selectY = (iteration === 0) ? lastY + 10 : lastY;
+
+    console.info('iteration %s selectX %s - selectY %s', (iteration === 0), selectX, selectY);
+
     Pixel
-      .find({processed: {'$ne': true}, locked: {'$ne': true}})
-      .sort({y: +1})
-      .limit(200)
+      .find({processed: {'$ne': true}, locked: {'$ne': true}, x: {'$lte': selectX}, y: {'$lte': selectY}})
+      .sort({x: +1, y: +1})
+      .limit(99)
       .exec(function (err, pixels) {
         if (!Array.isArray(pixels) || pixels.length === 0) {
           Lock.updating = false;
+          lastX = -1;
+          lastY = 9;
           reloadBuffer(errCb);
         } else {
           if (verifyPixels(pixels)) {
             lockPixels(pixels, function () {
+              /*
+               lastX = Math.max.apply(Math, pixels.map(function (o) {
+               return o.x;
+               }));
+               lastY = Math.max.apply(Math, pixels.map(function (o) {
+               return o.y;
+               }));
+
+               console.info('POST lastX %s - lastY %s', lastX, lastY);*/
+              lastX = selectX;
+              lastY = selectY;
+
               cb(pixels);
               Lock.updating = false;
             });

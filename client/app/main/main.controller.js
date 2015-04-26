@@ -12,6 +12,7 @@
       $scope.imageName = 'Processing';
       $scope.totalNodes = [];
 
+      $scope.joined = false;
       $scope.stopRequestingBuffer = true;
 
       var pixelSocketServiceListening = false;
@@ -120,7 +121,7 @@
       });
 
       $scope.loadSnapshot = function () {
-        //$scope.stopRequestingBuffer = true;
+        $scope.stopRequestingBuffer = true;
 
         var totalReceived = $scope.pixelsReceived + $scope.pixelsExternalProcessed;
         var msg = sprintf('\n%s - %s Consistency warning. Expected %s Received %s',
@@ -132,11 +133,14 @@
         $scope.pixelsExternalProcessed = 0;
         canvasViewService.loadImage('#snapshot', 'api/pixels/snapshot', function () {
           // $scope.lastError = '';
-          //$scope.stopRequestingBuffer = false;
+
           if (!pixelSocketServiceListening) {
             addListeners();
           }
-          //$scope.loadPixelBuffer();
+          if ($scope.joined === true) {
+            $scope.stopRequestingBuffer = false;
+            $scope.loadPixelBuffer();
+          }
           canvasViewService.clearImage('#preview');
         });
 
@@ -147,7 +151,8 @@
       };
 
       $scope.toggleNetwork = function () {
-        if ($scope.stopRequestingBuffer === true) {
+        if ($scope.joined === false) {
+          $scope.joined = true;
           $scope.stopRequestingBuffer = false;
           $('#toggleButton').removeClass('btn-success');
           $('#toggleButton').addClass('btn-danger');
@@ -155,6 +160,7 @@
           $scope.joinNetwork();
         } else {
           $scope.stopRequestingBuffer = true;
+          $scope.joined = false;
 
           $scope.leaveNetwork();
           $('#toggleButton').removeClass('btn-danger');
