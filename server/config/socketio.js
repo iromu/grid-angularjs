@@ -12,27 +12,31 @@ var _ = require('lodash');
 var connectedUsers = [];
 
 // When the user disconnects.. perform this
-function onDisconnect(socket) {
+function onDisconnect(socket, io) {
 
   socket.broadcast.emit('socket:disconnect', socket.id);
-
+  //socket.broadcast.emit('socket:info', getConnectedUserIds());
   _.remove(connectedUsers, function (current) {
     return socket.id === current.id;
   });
 }
 
 // When the user connects.. perform this
+var getConnectedUserIds = function () {
+  var ids = connectedUsers.map(function (connectedUser) {
+    return connectedUser.id;
+  });
+  return ids;
+};
 function onConnect(socket, socketio) {
   connectedUsers.push(socket);
 
   socket.broadcast.emit('socket:connect', socket.id);
+  //socket.broadcast.emit('socket:info', getConnectedUserIds());
   // When the client emits 'info', this listens and executes
   socket.on('socket:info', function (data) {
     console.info('[%s] INFO %s', socket.id, JSON.stringify(data, null, 2));
-    var ids = connectedUsers.map(function (connectedUser) {
-      return connectedUser.id;
-    });
-    socket.emit('socket:info', ids);
+    socket.emit('socket:info', getConnectedUserIds());
   });
   //connectedUsers[USER_NAME_HERE] = socket;
   // Insert sockets below
@@ -43,12 +47,16 @@ function joinRoom(socket, roomName, fn) {
   socket.join(roomName);
   socket.broadcast.to(roomName).emit('serverMessage', 'a user enters');
   socket.emit('message', 'You enter in room ' + roomName);
+  console.info('[%s] joinRoom %s', socket.id, JSON.stringify(roomName, null, 2));
+
 }
 
 function leaveRoom(socket, roomName, fn) {
   socket.leave(roomName);
   socket.broadcast.to(roomName).emit('serverMessage', 'a user leaves');
   socket.emit('message', 'You leave room ' + roomName);
+
+  console.info('[%s] leaveRoom %s', socket.id, JSON.stringify(roomName, null, 2));
 }
 
 module.exports = function (socketio) {
@@ -74,8 +82,14 @@ module.exports = function (socketio) {
 
     socket.connectedAt = new Date();
 
+    socket.on('joinNetwork', function (roomName, fn) {
+      joinRoom(socket, roomName, fn);
+    });
     socket.on('joinRoom', function (roomName, fn) {
       joinRoom(socket, roomName, fn);
+    });
+    socket.on('leaveNetwork', function (roomName, fn) {
+      leaveRoom(socket, roomName, fn);
     });
     socket.on('leaveRoom', function (roomName, fn) {
       leaveRoom(socket, roomName, fn);
@@ -83,7 +97,7 @@ module.exports = function (socketio) {
 
     // Call onDisconnect.
     socket.on('disconnect', function () {
-      onDisconnect(socket);
+      onDisconnect(socket, socketio);
       console.info('[%s] DISCONNECTED', socket.id);
     });
 

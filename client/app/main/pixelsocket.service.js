@@ -7,6 +7,7 @@
 
       pixelSocketService.bindArray = function (array) {
         socket.socket.on('socket:connect', function (id) {
+          // $log.warn('Connected ' + id);
           array.push(id);
         });
         socket.socket.on('socket:info', function (ids) {
@@ -16,7 +17,10 @@
           });
         });
         socket.socket.on('socket:disconnect', function (id) {
-          _.remove(array, {id: id});
+          //$log.warn('Disconnected ' + id);
+          _.remove(array, function (current) {
+            return id === current;
+          });
         });
 
         socket.socket.emit('socket:info');
@@ -50,6 +54,7 @@
       pixelSocketService.requestPixelBuffer = function () {
         socket.socket.emit('pixel:buffer:request');
       };
+
       pixelSocketService.unsync = function () {
         socket.removeAllListeners('snapshot');
         socket.removeAllListeners('pixel:batch:update');
@@ -57,6 +62,14 @@
         socket.removeAllListeners('socket:info');
         socket.removeAllListeners('socket:connect');
         socket.removeAllListeners('socket:disconnect');
+      };
+
+      pixelSocketService.joinNetwork = function (network) {
+        socket.socket.emit('joinNetwork', network);
+      };
+
+      pixelSocketService.leaveNetwork = function (network) {
+        socket.socket.emit('leaveNetwork', network);
       };
 
       return pixelSocketService;

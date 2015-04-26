@@ -12,7 +12,8 @@
       $scope.imageName = 'Processing';
       $scope.totalNodes = [];
 
-      var stopRequestingBuffer = false;
+      $scope.stopRequestingBuffer = true;
+
       var pixelSocketServiceListening = false;
 
       var getIdsFromPixels = function (pixels) {
@@ -91,8 +92,19 @@
 
       };
 
+      $scope.joinNetwork = function () {
+        if ($scope.stopRequestingBuffer === false) {
+          pixelSocketService.joinNetwork('grey');
+          pixelSocketService.requestPixelBuffer();
+        }
+      };
+      $scope.leaveNetwork = function () {
+        if ($scope.stopRequestingBuffer === false) {
+          pixelSocketService.leaveNetwork('grey');
+        }
+      };
       $scope.loadPixelBuffer = function () {
-        if (stopRequestingBuffer === false) {
+        if ($scope.stopRequestingBuffer === false) {
           pixelSocketService.requestPixelBuffer();
         }
       };
@@ -108,7 +120,7 @@
       });
 
       $scope.loadSnapshot = function () {
-        stopRequestingBuffer = true;
+        //$scope.stopRequestingBuffer = true;
 
         var totalReceived = $scope.pixelsReceived + $scope.pixelsExternalProcessed;
         var msg = sprintf('\n%s - %s Consistency warning. Expected %s Received %s',
@@ -120,11 +132,11 @@
         $scope.pixelsExternalProcessed = 0;
         canvasViewService.loadImage('#snapshot', 'api/pixels/snapshot', function () {
           // $scope.lastError = '';
-          stopRequestingBuffer = false;
+          //$scope.stopRequestingBuffer = false;
           if (!pixelSocketServiceListening) {
             addListeners();
           }
-          $scope.loadPixelBuffer();
+          //$scope.loadPixelBuffer();
           canvasViewService.clearImage('#preview');
         });
 
@@ -133,6 +145,25 @@
       $scope.updatePixels = function (pixels) {
         $http.put('/api/pixels/', pixels);
       };
+
+      $scope.toggleNetwork = function () {
+        if ($scope.stopRequestingBuffer === true) {
+          $scope.stopRequestingBuffer = false;
+          $('#toggleButton').removeClass('btn-success');
+          $('#toggleButton').addClass('btn-danger');
+          $('#toggleButton').text('Quit');
+          $scope.joinNetwork();
+        } else {
+          $scope.stopRequestingBuffer = true;
+
+          $scope.leaveNetwork();
+          $('#toggleButton').removeClass('btn-danger');
+          $('#toggleButton').addClass('btn-success');
+
+          $('#toggleButton').text('Join');
+        }
+      };
+
 
     });
 
