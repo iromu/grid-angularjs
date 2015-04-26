@@ -42,6 +42,7 @@
           p.map(job).then(function (arrayProcessed) {
             $scope.putPixels(arrayProcessed);
             canvasViewService.drawProcessed(c, imageData, arrayProcessed);
+            canvasViewService.pixelBatchUpdate('#preview', arrayProcessed);
             setTimeout($scope.loadPixelBuffer, 500);
           });
 
@@ -62,7 +63,7 @@
             $scope.pixelsExternalProcessed += pixels.length;
             canvasViewService.pixelBatchUpdate('#preview', pixels);
             canvasViewService.pixelBatchUpdate('#snapshot', pixels.map(function (pixel) {
-              pixel.g = 255;
+              pixel.g = 155;
               return pixel;
             }));
           } else {
