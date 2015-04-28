@@ -13,17 +13,23 @@
 
 ### Prepare enviroment
 
-  $ npm install -g bower grunt-cli
+    $ npm install -g bower grunt-cli
   
-  $ npm install
+    $ npm install
   
-  $ bower install
+    $ bower install
+  
+#### OSX
+  
+  Install XQuartz, then...
+
+    $ brew install cairo
   
   
 ### Run embedded server
 
-  $ grunt serve
+    $ grunt serve
   
 ### Open location in browser
 
-  http://localhost:9000
+    http://localhost:9000
