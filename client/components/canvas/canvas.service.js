@@ -42,14 +42,15 @@ angular.module('gridApp')
       drawing.onload = function () {
         c.drawImage(drawing, 0, 0);
         cb();
-       };
+      };
     };
 
     var getRegion = function (id, region, size) {
-      var w = $(id)[0].width;
-      var row = 1;
-      var col = region;
 
+      var w = $(id)[0].width;
+      var row = Math.floor(region / 10)+1;
+      var col = region % 10;
+      //console.log(region + ' ' + col + ',' + row);
       var selectX = (col - 1) * size - 1; //1,0 2,29, 3,59
       selectX = selectX < 0 ? 0 : selectX;
       selectX = selectX - 1 >= w ? 0 : selectX;

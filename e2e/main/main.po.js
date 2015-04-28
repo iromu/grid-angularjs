@@ -5,10 +5,8 @@
 
 'use strict';
 
-var MainPage = function() {
-  this.heroEl = element(by.css('.hero-unit'));
-  this.h1El = this.heroEl.element(by.css('h1'));
-  this.imgEl = this.heroEl.element(by.css('img'));
+var MainPage = function () {
+  this.snapshot = element(by.id('snapshot'));
 };
 
 module.exports = new MainPage();

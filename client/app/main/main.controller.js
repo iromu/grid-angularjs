@@ -117,7 +117,9 @@
       };
 
       $scope.$on('$destroy', function () {
-        pixelSocketServiceListening = false;
+        $log.warn('$destroy main');
+        $scope.stopRequestingBuffer = true;
+        $scope.joined = false;
         pixelSocketService.unsync();
       });
 
