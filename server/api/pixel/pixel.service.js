@@ -120,9 +120,20 @@ exports.getPixels = function (cb, errCb) {
   }
 };
 
+var removeIfNull = function (update, p) {
+  if (!update[p])delete update[p];
+};
 exports.savePixels = function (pixels, cb) {
   pixels.forEach(function (item) {
-    var update = {r: item.r, g: item.g, b: item.b, a: item.a, processed: true, locked: false};
+    var update = {r: item.r, g: item.g, b: item.b, a: item.a, s: item.s, processed: true, locked: false};
+
+    if (update.s) {
+      removeIfNull(update, 'r');
+      removeIfNull(update, 'g');
+      removeIfNull(update, 'b');
+      removeIfNull(update, 'a');
+    }
+
     Pixel.collection.update({_id: item._id}, {$set: update}, function (err) {
       if (err) {
         console.info('UPDATE ERROR %s', JSON.stringify(err, null, 2));

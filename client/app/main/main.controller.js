@@ -17,13 +17,6 @@
 
       var pixelSocketServiceListening = false;
 
-      var getIdsFromPixels = function (pixels) {
-        var ids = pixels.map(function (pixel) {
-          return pixel._id;
-        });
-        return ids;
-      };
-
       var process = function (pixels) {
         if (Array.isArray(pixels) && pixels.length > 0) {
           var element = $('#snapshot')[0];
@@ -32,17 +25,18 @@
           $scope.pixelsReceived += pixels.length;
           var p = new Parallel(pixels, {maxWorkers: $scope.maxWorkers});
           var job = function (item) {
-            var grayscalecolor = (item.r + item.g + item.b) / 3;
-            item.r = grayscalecolor;
-            item.g = grayscalecolor;
-            item.b = grayscalecolor;
-            item.processed = true;
+            item.s = Math.round((item.r + item.g + item.b) / 3);
             return item;
           };
           p.map(job).then(function (arrayProcessed) {
             $scope.putPixels(arrayProcessed);
             canvasViewService.drawProcessed(c, imageData, arrayProcessed);
-            canvasViewService.pixelBatchUpdate('#preview', arrayProcessed);
+            canvasViewService.pixelBatchUpdate('#preview', arrayProcessed.map(function (pixel) {
+              pixel.r = pixel.s;
+              pixel.g = pixel.s;
+              pixel.b = pixel.s;
+              return pixel;
+            }));
             setTimeout($scope.loadPixelBuffer, 500);
           });
 
@@ -74,15 +68,6 @@
         pixelSocketService.onPixelBufferResponse(function (pixels) {
 
           if (Array.isArray(pixels) && pixels.length > 0) {
-            //var pixelIds = getIdsFromPixels(pixels);
-            //if ($scope.pixelBuffer.length > 0) {
-            //  var diff = _.difference(pixelIds, $scope.pixelBuffer);
-            //  if (diff !== $scope.pixelBuffer) {
-            //    $log.warn('Duplicated ' + pixelIds[0]);
-            //  }
-            //}
-            //$scope.pixelBuffer = $scope.pixelBuffer.concat(pixelIds);
-
             process(pixels);
           } else {
             $log.warn('onPixelBufferResponse() empty array received for processing.');
@@ -111,9 +96,15 @@
         }
       };
 
+      function compressGrey(pixels) {
+        var min = pixels.map(function (pixel) {
+          return {_id: pixel._id, s: pixel.s};
+        });
+        return min;
+      }
+
       $scope.putPixels = function (pixels) {
-        pixelSocketService.putPixels(pixels);
-        // $scope.updatePixels(pixels);
+        pixelSocketService.putPixels(compressGrey(pixels));
       };
 
       $scope.$on('$destroy', function () {

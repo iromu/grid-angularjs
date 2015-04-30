@@ -3,8 +3,6 @@
 var mongoose = require('mongoose'),
   Schema = mongoose.Schema;
 
-//mongoose.set('debug', true);
-
 var PixelSchema = new Schema({
   image: String,
   x: {type: Number, index: true},
@@ -12,7 +10,8 @@ var PixelSchema = new Schema({
   r: Number,
   g: Number,
   b: Number,
-  a: Number,
+  s: Number,//shades of grey
+  a: Number,//alpha
   processed: {type: Boolean, index: true},
   locked: {type: Boolean, index: true}
 });
