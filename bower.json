@@ -16,7 +16,8 @@
     "angular-socket-io": "~0.6.0",
     "angular-ui-router": "~0.2.10",
     "moment": "~2.10.2",
-    "sprintf": "~1.0.2"
+    "sprintf": "~1.0.2",
+    "paralleljs": "*"
   },
   "devDependencies": {
     "angular-mocks": ">=1.2.*",

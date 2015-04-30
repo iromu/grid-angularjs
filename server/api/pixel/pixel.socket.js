@@ -18,7 +18,7 @@
     }
 
     socket.on('pixel:buffer:request', function () {
-      console.info('[%s] pixel:buffer:request', socket.id);
+      //console.info('[%s] pixel:buffer:request', socket.id);
       service.getPixels(function (pixels) {
         socket.emit('pixel:buffer:response', pixels);
       }, function (imageName) {
@@ -27,7 +27,7 @@
     });
 
     socket.on('pixel:put', function (pixels) {
-      console.info('[%s] pixel:put', socket.id);
+      //console.info('[%s] pixel:put', socket.id);
       service.savePixels(pixels, function () {
         socket.broadcast.emit('pixel:batch:update', pixels);
       });
