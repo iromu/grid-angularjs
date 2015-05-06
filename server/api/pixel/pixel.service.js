@@ -58,24 +58,36 @@ var lockPixels = function (pixels, callback) {
   });
 };
 
-var reloadBuffer = function (errCb) {
+var insertPixelsFrom = function (jsonFile, imageName, cb) {
+  fs.readFile(__dirname + jsonFile, function read(err, data) {
+    if (err) {
+      throw err;
+    }
+    var arr = JSON.parse(data);
 
-  Pixel.find({}).remove(function () {
-    fs.readFile(__dirname + '/lena.json', function read(err, data) {
-      if (err) {
-        throw err;
-      }
-      var arr = JSON.parse(data);
-
-      var imageName = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 36);
-      arr.map(function (item) {
-        item.image = imageName;
-        return item;
-      });
-      Pixel.collection.insert(arr, function () {
-        errCb(imageName);
-      });
+    arr.map(function (item) {
+      item.image = imageName;
+      return item;
     });
+    Pixel.collection.insert(arr, function () {
+      cb(imageName);
+    });
+  });
+};
+var reloadBuffer = function (errCb) {
+  var update = {s: null, processed: false, locked: false};
+
+  Pixel.collection.update({image: 'lena.png'}, {$set: update}, options, function (err, numAffected, raw) {
+    if (numAffected === 0) {
+      console.warn('The number of updated documents was %d', numAffected);
+      console.warn('The raw response from Mongo was ', raw);
+
+      insertPixelsFrom('/lena.json', 'lena.png', errCb);
+    }
+    if (err) {
+      console.info('UPDATE ERROR %s', JSON.stringify(err, null, 2));
+    }
+    errCb('lena.png');
   });
 };
 
@@ -88,7 +100,13 @@ exports.getPixels = function (cb, errCb) {
     var selectY = (iteration === 0) ? lastY + 10 : lastY;
 
     Pixel
-      .find({processed: {'$ne': true}, locked: {'$ne': true}, x: {'$lte': selectX}, y: {'$lte': selectY}})
+      .find({
+        processed: {'$ne': true},
+        locked: {'$ne': true},
+        x: {'$lte': selectX},
+        y: {'$lte': selectY},
+        image: 'lena.png'
+      })
       .sort({x: +1, y: +1})
       .limit(99)
       .exec(function (err, pixels) {
@@ -103,8 +121,8 @@ exports.getPixels = function (cb, errCb) {
               lastX = selectX;
               lastY = selectY;
 
-              cb(pixels);
               Lock.updating = false;
+              cb(pixels);
             });
           } else {
             Lock.updating = false;
@@ -123,15 +141,18 @@ exports.getPixels = function (cb, errCb) {
 var removeIfNull = function (update, p) {
   if (!update[p])delete update[p];
 };
+
 exports.savePixels = function (pixels, cb) {
+
   pixels.forEach(function (item) {
     var update = {r: item.r, g: item.g, b: item.b, a: item.a, s: item.s, processed: true, locked: false};
+
+    removeIfNull(update, 'a');
 
     if (update.s) {
       removeIfNull(update, 'r');
       removeIfNull(update, 'g');
       removeIfNull(update, 'b');
-      removeIfNull(update, 'a');
     }
 
     Pixel.collection.update({_id: item._id}, {$set: update}, function (err) {

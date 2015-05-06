@@ -17,6 +17,7 @@ angular.module('gridApp')
       var imageData = c.createImageData(1, 1);
 
       pixels.forEach(function (item) {
+        if (!item.a)item.a = 255;
         setPixel(imageData, 0, 0, item.r, item.g, item.b, item.a);
         c.putImageData(imageData, item.x, item.y);
       });
@@ -48,9 +49,9 @@ angular.module('gridApp')
     var getRegion = function (id, region, size) {
 
       var w = $(id)[0].width;
-      var row = Math.floor(region / 10)+1;
+      var row = region / 10;
       var col = region % 10;
-      //console.log(region + ' ' + col + ',' + row);
+      console.log(region + ' ' + col + ',' + row);
       var selectX = (col - 1) * size - 1; //1,0 2,29, 3,59
       selectX = selectX < 0 ? 0 : selectX;
       selectX = selectX - 1 >= w ? 0 : selectX;
@@ -84,6 +85,7 @@ angular.module('gridApp')
       },
       drawProcessed: function (c, imageData, items) {
         items.forEach(function (item) {
+          if (!item.a)item.a = 255;
           setPixel(imageData, 0, 0, 255, item.g, item.b, item.a);
           c.putImageData(imageData, item.x, item.y);
         });

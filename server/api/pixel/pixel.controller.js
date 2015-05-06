@@ -20,29 +20,59 @@ var height = 100;
 var socket;
 
 exports.snapshot = function (req, res) {
-  Pixel.find(function (err, pixels) {
-    if (err) {
-      return handleError(res, err);
-    }
+  Pixel.find({image: 'lena.png'})
+    .sort({x: +1, y: +1})
+    .exec(function (err, pixels) {
+      if (err) {
+        return handleError(res, err);
+      }
 
-    var canvas = new Canvas(width, height);
-    var ctx = canvas.getContext('2d');
+      var canvas = new Canvas(width, height);
+      var ctx = canvas.getContext('2d');
 
-    var id = ctx.createImageData(1, 1);
-    var d = id.data;
+      var id = ctx.createImageData(1, 1);
+      var d = id.data;
 
-    pixels.forEach(function (pixel) {
-      d[0] = pixel.r;
-      d[1] = pixel.g;
-      d[2] = pixel.b;
-      d[3] = pixel.a;
-      ctx.putImageData(id, pixel.x, pixel.y);
+      pixels.forEach(function (pixel) {
+        d[0] = pixel.r;
+        d[1] = pixel.g;
+        d[2] = pixel.b;
+        d[3] = pixel.a || 255;
+        ctx.putImageData(id, pixel.x, pixel.y);
+      });
+
+      var stream = canvas.syncPNGStream();
+
+      return stream.pipe(res);
     });
+};
 
-    var stream = canvas.syncPNGStream();
+exports.preview = function (req, res) {
+  Pixel.find({image: 'lena.png'})
+    .sort({x: +1, y: +1})
+    .exec(function (err, pixels) {
+      if (err) {
+        return handleError(res, err);
+      }
 
-    return stream.pipe(res);
-  });
+      var canvas = new Canvas(width, height);
+      var ctx = canvas.getContext('2d');
+
+      var id = ctx.createImageData(1, 1);
+      var d = id.data;
+
+      pixels.forEach(function (pixel) {
+        d[0] = pixel.s;
+        d[1] = pixel.s;
+        d[2] = pixel.s;
+        d[3] = pixel.a || 255;
+        ctx.putImageData(id, pixel.x, pixel.y);
+      });
+
+      var stream = canvas.syncPNGStream();
+
+      return stream.pipe(res);
+    });
 };
 
 // Updates an existing pixel in the DB.

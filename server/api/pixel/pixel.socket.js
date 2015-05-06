@@ -29,7 +29,7 @@
     socket.on('pixel:put', function (pixels) {
       //console.info('[%s] pixel:put', socket.id);
       service.savePixels(pixels, function () {
-        socket.broadcast.emit('pixel:batch:update', pixels);
+        io.sockets.emit('pixel:batch:update', pixels);
       });
     });
 
