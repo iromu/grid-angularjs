@@ -1,20 +1,29 @@
 <div ng-include="'components/navbar/navbar.html'"></div>
 
-<div class="container">
+<div class="nn-view container">
   <p>Local neural network training test</p>
+
   <div class="row">
-    <div class="col-md-3 col-sm-3 col-xs-6">
-      <canvas id="numbersCanvas" width="300" height="300" ng-init="loadNumbers()">
+    <div class="col-md-3 col-sm-3 col-xs-6 canvas-overlay">
+      <canvas id="numbersCanvas" width="200 " height="200">
+      </canvas>
+      <canvas id="numbersCanvasOverlay" width="200 " height="200">
       </canvas>
     </div>
-    <div class="col-md-3 col-sm-3 col-xs-6">
-      <canvas id="numberCanvas" width="30" height="30">
+    <div class="col-md-2 col-sm-2 col-xs-3">
+      <canvas id="trainingCanvas" width="20" height="20">
       </canvas>
+      <p class="help-block">Training <strong>{{ number.pick }}</strong></p>
     </div>
-    <div class="col-md-6 col-sm-6  col-xs-12">
+    <div class="col-md-2 col-sm-2 col-xs-3">
+      <canvas id="predictionCanvas" width="20" height="20">
+      </canvas>
+      <p class="help-block">Prediction <strong>{{ number.prediction }}</strong></p>
+    </div>
+    <div class="col-md-4 col-sm-4 col-xs-12">
       <div class="input-group">
         <span class="input-group-addon" id="input-pick">Number?</span>
-        <input id="input-pick-control" type="text" class="form-control" ng-model="pickNumber" ng-change="nextNumber();"
+        <input id="input-pick-control" type="text" class="form-control" ng-model="number.pick"
                aria-describedby="input-pick"/>
       </div>
       <div>
@@ -24,13 +33,11 @@
       </div>
       <div>
         <button type="button" id="trainButton"
-                class="btn btn-success btn-block animate-hide" ng-click="trainNetwork()">Train</button>
+                class="btn btn-success btn-block animate-hide" ng-click="trainNetwork()">Train
+        </button>
       </div>
     </div>
   </div>
 
-  <p class="help-block">
-  <pre>{{ infoMsg }}</pre>
-  </p>
 
 </div>
