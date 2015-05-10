@@ -17,6 +17,7 @@
       var net = new brain.NeuralNetwork();
       var runNetwork;
 
+      $scope.accuracy = 0;
       $scope.trainingImageData = null;
 
       var loadNextNumberInterval = null;
@@ -41,6 +42,31 @@
         });
       };
       init();
+
+      $scope.testAccuracy = function () {
+        var result = [];
+        for (var selection = 1; selection <= 100; selection++) {
+          var imageData = nnView.loadRegionForPrediction(selection, false);
+          var normalized = trainerService.normalize(imageData);
+          var solution = runNetwork(normalized);
+          var prediction = trainerService.getMaxLabel(solution);
+          var sample = autoTrainPrediction[selection - 1];
+          result.push((prediction === sample) ? 1 : 0);
+        }
+
+        var counter = _.reduce(result, function (counts, key) {
+            counts[key]++;
+            return counts;
+          },
+          _.object(_.map(_.uniq(result), function (key) {
+            return [key, 0];
+          })));
+        var accuracy = counter['1'];
+
+        console.log('Training Set Accuracy ' + accuracy);
+        $scope.accuracy = accuracy;
+        $scope.$apply();
+      }
 
       $scope.loadNextNumber = function () {
         $scope.region += 1;
@@ -72,7 +98,7 @@
       $scope.randomSolve = function () {
         if (runNetwork) {
           var selection = Math.floor(Math.random() * 100 + 1);
-          var imageData = nnView.loadRegionForPrediction(selection);
+          var imageData = nnView.loadRegionForPrediction(selection, true);
           var normalized = trainerService.normalize(imageData);
           var solution = runNetwork(normalized);
           var solutionJson = JSON.stringify(solution, null, 2);
@@ -91,7 +117,7 @@
         console.log(JSON.stringify(json.info, null, 2));
         net = new brain.NeuralNetwork().fromJSON(json.net);
         runNetwork = net.toFunction();
-        runNetwork.name = 'runNetwork';
+        $timeout($scope.testAccuracy, 1000);
       };
 
       $scope.nextNumber = function () {

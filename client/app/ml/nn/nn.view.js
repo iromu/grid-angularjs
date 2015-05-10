@@ -18,10 +18,12 @@
           canvasViewService.drawSelection('#numbersCanvasOverlay', region.selection);
           return region.imageData;
         },
-        loadRegionForPrediction: function (index) {
+        loadRegionForPrediction: function (index, draw) {
           var region = canvasViewService.getRegion('#numbersCanvas', index, 20);
           canvasViewService.setImageData('#predictionCanvas', region.imageData);
-          canvasViewService.drawSelection('#numbersCanvasOverlay', region.selection, 'cyan');
+          if (draw) {
+            canvasViewService.drawSelection('#numbersCanvasOverlay', region.selection, 'cyan');
+          }
           return region.imageData;
         },
         getRegionData: function (region) {
