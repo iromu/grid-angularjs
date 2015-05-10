@@ -49,7 +49,7 @@
         putSample: function (number, imagedata) {
           var result = {
             input: utils.normalize(imagedata),
-            output: utils.createObject(number, number)
+            output: utils.createObject(number, 1)
           };
           this.data.push(result);
           this.numbers.push(number);
@@ -61,14 +61,14 @@
           p.spawn(function (data) {
             var net = new brain.NeuralNetwork({
               hiddenLayers: [25],
-              learningRate: 0.6
+              learningRate: 0.1
             });
             var info = net.train(data, {
               iterations: 400, //400
               log: true,
               logPeriod: 10
             });
-            return {info: info, net: net.toJSON()};
+            return {info: info, net: net.toJSON(), data: data};
           }).then(function (json) {
             cb(json);
           });

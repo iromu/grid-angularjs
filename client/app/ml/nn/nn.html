@@ -19,6 +19,8 @@
       <canvas id="predictionCanvas" width="20" height="20">
       </canvas>
       <p class="help-block">Prediction <strong>{{ number.prediction }}</strong></p>
+
+      <p class="help-block">Sample <strong>{{ number.sample }}</strong></p>
     </div>
     <div class="col-md-4 col-sm-4 col-xs-12">
       <div class="input-group">
@@ -34,6 +36,11 @@
       <div>
         <button type="button" id="trainButton"
                 class="btn btn-success btn-block animate-hide" ng-click="trainNetwork()">Train
+        </button>
+      </div>
+      <div>
+        <button type="button" id="autoTrainButton"
+                class="btn btn-success btn-block animate-hide" ng-click="autoTrainNetwork()">Auto Train
         </button>
       </div>
     </div>

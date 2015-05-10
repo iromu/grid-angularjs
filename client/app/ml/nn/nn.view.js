@@ -33,9 +33,11 @@
         },
         onTrainNetwork: function () {
           $('#trainButton').prop('disabled', true);
+          $('#autoTrainButton').prop('disabled', true);
         },
         onConfigureNetwork: function () {
           $('#trainButton').prop('disabled', false);
+          $('#autoTrainButton').prop('disabled', false);
         }
       };
 

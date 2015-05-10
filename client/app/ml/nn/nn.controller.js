@@ -5,11 +5,11 @@
     .controller('MlNNCtrl', function ($scope, $interval, $timeout, nnView, trainerService) {
 
       $scope.infoMsg = '';
-      $scope.number = {pick: 0, prediction: 0};
+      $scope.number = {pick: 0, prediction: 0, sample: 0};
       $scope.inputLayerSize = 400; // 20x20 $scope.region 400 pixeles
       $scope.hiddenLayerSize = 25;
       $scope.numLabels = 10; // 0.1.2.3.4.5.6.7.8.9
-      $scope.autoTrain = true;
+      $scope.autoTrain = false;
       $scope.autoPredict = true;
 
       $scope.region = 0;
@@ -77,6 +77,7 @@
           var solution = runNetwork(normalized);
           var solutionJson = JSON.stringify(solution, null, 2);
           $scope.number.prediction = trainerService.getMaxLabel(solution);
+          $scope.number.sample = autoTrainPrediction[selection - 1];
 
           console.log('region ' + selection + ' prediction: ' + $scope.number.prediction + ' output:' + solutionJson);
           $scope.$apply();
@@ -103,6 +104,20 @@
         trainerService.trainNetwork();
         nnView.onTrainNetwork();
       };
+
+      $scope.autoTrainNetwork = function () {
+        $scope.autoTrain = true;
+        $scope.region = 0;
+        nnView.onTrainNetwork();
+        loadNextNumberInterval = $interval($scope.loadNextNumber, 1000);
+      };
+
+      $scope.$on('$destroy', function () {
+        if (angular.isDefined(loadNextNumberInterval)) {
+          $interval.cancel(loadNextNumberInterval);
+          loadNextNumberInterval = undefined;
+        }
+      });
 
     });
 }());
