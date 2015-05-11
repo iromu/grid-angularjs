@@ -132,6 +132,10 @@ angular.module('gridApp')
       },
       calcWindowSlice: function (region, width, height, size) {
         return calcWindowSlice(region, width, height, size);
+      },
+      getContext: function (id) {
+        var element = getCanvas(id);
+        return element.getContext('2d');
       }
     };
   });

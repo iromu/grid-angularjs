@@ -4,11 +4,12 @@
   <p>Local neural network training test</p>
 
   <div class="row">
-    <div class="col-md-3 col-sm-3 col-xs-6 canvas-overlay">
+    <div class="col-md-3 col-sm-2 col-xs-5 canvas-overlay">
       <canvas id="numbersCanvas" width="200 " height="200">
       </canvas>
-      <canvas id="numbersCanvasOverlay" width="200 " height="200">
+      <canvas id="numbersCanvasOverlay" class="overlay" width="200 " height="200">
       </canvas>
+      <p class="help-block">Sample data</p>
     </div>
     <div class="col-md-2 col-sm-2 col-xs-3">
       <canvas id="trainingCanvas" width="20" height="20">
@@ -43,6 +44,27 @@
       <div>
         <button type="button" id="autoTrainButton"
                 class="btn btn-success btn-block animate-hide" ng-click="autoTrainNetwork()">Auto Train
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-4 col-sm-4 col-xs-12">
+      <canvas id="drawCanvas" width="200" height="200">
+      </canvas>
+      <canvas id="drawCanvasInput" width="20" height="20">
+      </canvas>
+      <p class="help-block">Prediction <strong>{{ draw.prediction }}</strong></p>
+    </div>
+    <div class="col-md-2 col-sm-2 col-xs-12">
+      <div>
+        <button type="button" id="clearButton"
+                class="btn btn-success btn-block animate-hide" ng-click="clearDraw()">Clear
+        </button>
+      </div>
+      <div>
+        <button type="button" id="predictButton"
+                class="btn btn-success btn-block animate-hide" ng-click="predictDraw()">Predict
         </button>
       </div>
     </div>

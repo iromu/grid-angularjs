@@ -6,6 +6,7 @@
 
       $scope.infoMsg = '';
       $scope.number = {pick: 0, prediction: 0, sample: 0};
+      $scope.draw = {pick: 0, prediction: 0, sample: 0};
       $scope.inputLayerSize = 400; // 20x20 $scope.region 400 pixeles
       $scope.hiddenLayerSize = 25;
       $scope.numLabels = 10; // 0.1.2.3.4.5.6.7.8.9
@@ -144,6 +145,21 @@
           loadNextNumberInterval = undefined;
         }
       });
+
+      $scope.clearDraw = function () {
+        nnView.onClearDraw();
+      };
+
+      $scope.predictDraw = function () {
+        if (angular.isDefined(runNetwork)) {
+          var imageData = nnView.loadDrawForPrediction();
+          var normalized = trainerService.normalize(imageData);
+          var solution = runNetwork(normalized);
+          var solutionJson = JSON.stringify(solution, null, 2);
+          $scope.draw.prediction = trainerService.getMaxLabel(solution);
+          console.log('Prediction: ' + $scope.draw.prediction + ' output:' + solutionJson);
+        }
+      };
 
     });
 }());

@@ -11,6 +11,16 @@
             canvasViewService.clearImage('#trainingCanvas');
             cb();
           });
+
+
+          $('#drawCanvas').sketch({
+            defaultSize: 20,
+            defaultColor: '#FF0000'
+          });
+
+          //$('#drawCanvas').drawTouch();
+          //$('#drawCanvas').drawPointer();
+          //$('#drawCanvas').drawMouse();
         },
         loadRegionForTraining: function (index) {
           var region = canvasViewService.getRegion('#numbersCanvas', index, 20);
@@ -26,6 +36,24 @@
           }
           return region.imageData;
         },
+        loadDrawForPrediction: function () {
+          canvasViewService.clearImage('#drawCanvasInput');
+
+          var id = '#drawCanvas';
+          var canvas = $(id)[0];
+          var url = canvas.toDataURL();
+          var newImg = document.createElement('img');
+          newImg.src = url;
+
+          var scale = $('#drawCanvasInput')[0];
+          var ctx = scale.getContext('2d');
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, 20, 20);
+          // Draw image to canvas
+          ctx.drawImage(newImg, 0, 0, 20, 20);
+          return ctx.getImageData(0, 0, 20, 20);
+        },
         getRegionData: function (region) {
           return canvasViewService.getRegion('#numbersCanvas', region, 20).imageData.data;
         },
@@ -40,6 +68,10 @@
         onConfigureNetwork: function () {
           $('#trainButton').prop('disabled', false);
           $('#autoTrainButton').prop('disabled', false);
+        },
+        onClearDraw: function () {
+          canvasViewService.clearImage('#drawCanvas');
+          canvasViewService.clearImage('#drawCanvasInput');
         }
       };
 
