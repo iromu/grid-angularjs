@@ -5,11 +5,11 @@
     .controller('MainCtrl', function ($scope, $log, $http, $filter, pixelSocketService, canvasViewService) {
       //$scope.pixelBuffer = [];
       $scope.pixelsReceived = 0;
-      $scope.maxWorkers = 4;
+      $scope.maxWorkers = 0;
       $scope.pixelsExternalProcessed = 0;
       $scope.serverResponse = '';
       $scope.lastError = '';
-      $scope.imageName = 'Processing';
+      $scope.imageName = '';
       $scope.totalNodes = [];
 
       $scope.joined = false;
@@ -17,28 +17,36 @@
 
       var pixelSocketServiceListening = false;
 
+
       var process = function (pixels) {
         if (Array.isArray(pixels) && pixels.length > 0) {
           var element = $('#snapshot')[0];
           var c = element.getContext('2d');
           var imageData = c.createImageData(1, 1);
-          $scope.pixelsReceived += pixels.length;
-          var p = new Parallel(pixels, {maxWorkers: $scope.maxWorkers});
-          var job = function (item) {
-            item.s = Math.round((item.r + item.g + item.b) / 3);
-            return item;
-          };
-          p.map(job).then(function (arrayProcessed) {
-            $scope.putPixels(arrayProcessed);
-            canvasViewService.drawProcessed(c, imageData, arrayProcessed);
-            canvasViewService.pixelBatchUpdate('#preview', arrayProcessed.map(function (pixel) {
-              pixel.r = pixel.s;
-              pixel.g = pixel.s;
-              pixel.b = pixel.s;
-              return pixel;
-            }));
+
+          var onWorkDone = function (pixels) {
+            $scope.putPixels(pixels);
+            canvasViewService.drawProcessed(c, imageData, pixels);
             setTimeout($scope.loadPixelBuffer, 500);
-          });
+          };
+
+          $scope.pixelsReceived += pixels.length;
+          if ($scope.maxWorkers > 0) {
+            var p = new Parallel(pixels, {maxWorkers: $scope.maxWorkers});
+            var job = function (item) {
+              item.s = Math.round((item.r + item.g + item.b) / 3);
+              return item;
+            };
+            p.map(job).then(function (arrayProcessed) {
+              onWorkDone(arrayProcessed);
+            });
+          } else {
+            pixels.forEach(function (item) {
+                item.s = Math.round((item.r + item.g + item.b) / 3);
+              }
+            );
+            onWorkDone(pixels);
+          }
 
         }
       };
@@ -48,16 +56,18 @@
         pixelSocketService.bindArray($scope.totalNodes);
 
         pixelSocketService.onSnapshot(function (imageName) {
-          $scope.imageName = 'Processing ' + imageName;
+          $scope.imageName = imageName;
           $scope.loadSnapshot();
         });
 
         pixelSocketService.onPixelBatchUpdate(function (pixels) {
           if (Array.isArray(pixels) && pixels.length > 0) {
             $scope.pixelsExternalProcessed += pixels.length;
-            canvasViewService.pixelBatchUpdate('#preview', pixels);
-            canvasViewService.pixelBatchUpdate('#snapshot', pixels.map(function (pixel) {
-              pixel.g = 155;
+            canvasViewService.pixelBatchUpdate('#preview', pixels.map(function (pixel) {
+              pixel.r = pixel.s;
+              pixel.g = pixel.s;
+              pixel.b = pixel.s;
+              pixel.a = 255;
               return pixel;
             }));
           } else {
@@ -98,7 +108,7 @@
 
       function compressGrey(pixels) {
         var min = pixels.map(function (pixel) {
-          return {_id: pixel._id, s: pixel.s};
+          return {_id: pixel._id, x: pixel.x, y: pixel.y, s: pixel.s};
         });
         return min;
       }
@@ -117,14 +127,10 @@
       $scope.loadSnapshot = function () {
         $scope.stopRequestingBuffer = true;
 
-        var totalReceived = $scope.pixelsReceived + $scope.pixelsExternalProcessed;
-        var msg = sprintf('\n%s - %s Consistency warning. Expected %s Received %s',
-          moment().format(), $scope.imageName, ($filter('number')((100 * 100), 0)),
-          ($filter('number')(totalReceived, 0)));
-
-        $scope.lastError += (totalReceived > 0 && totalReceived > (100 * 100)) ? msg : '';
         $scope.pixelsReceived = 0;
         $scope.pixelsExternalProcessed = 0;
+
+        canvasViewService.clearImage('#snapshot');
         canvasViewService.loadImage('#snapshot', 'api/pixels/snapshot', function () {
           // $scope.lastError = '';
 
@@ -136,6 +142,8 @@
             setTimeout($scope.loadPixelBuffer, 2000);
           }
           canvasViewService.clearImage('#preview');
+          canvasViewService.loadImage('#preview', 'api/pixels/preview');
+
         });
 
       };

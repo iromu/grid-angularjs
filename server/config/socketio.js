@@ -40,6 +40,7 @@ function onConnect(socket, socketio) {
   });
   //connectedUsers[USER_NAME_HERE] = socket;
   // Insert sockets below
+  require('../api/nn/nn.socket').register(socket);
   require('../api/pixel/pixel.socket').register(socket, socketio);
 }
 

@@ -386,6 +386,8 @@ module.exports = function (grunt) {
           src: [
             'package.json',
             '.buildpacks',
+            '.ebextensions/*.config',
+            '.elasticbeanstalk/*.yml',
             'server/**/*'
           ]
         }]
@@ -410,6 +412,13 @@ module.exports = function (grunt) {
         options: {
           remote: 'heroku',
           branch: 'master'
+        }
+      },
+      eb: {
+        options: {
+          remote: '../',
+          branch: 'eb',
+          push: false
         }
       },
       openshift: {

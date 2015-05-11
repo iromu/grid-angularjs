@@ -6,3 +6,8 @@ public
 client/bower_components
 dist
 /server/config/local.env.js
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
