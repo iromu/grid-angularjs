@@ -7,6 +7,8 @@ module.exports = {
   mongo: {
     uri: 'mongodb://localhost/grid-dev'
   },
-
+  redis: {
+    uri: 'redis://localhost:6379'
+  },
   seedDB: true
 };

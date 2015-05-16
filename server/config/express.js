@@ -16,6 +16,11 @@ var path = require('path');
 var config = require('./environment');
 var passport = require('passport');
 
+var session = require('express-session');
+var RedisStore = require('connect-redis')(session);
+
+var redisClient = require('../components/redis');
+
 module.exports = function (app) {
   var env = app.get('env');
 
@@ -28,6 +33,7 @@ module.exports = function (app) {
   app.use(methodOverride());
   app.use(cookieParser());
   app.use(passport.initialize());
+
   if ('production' === env) {
     app.use(favicon(path.join(config.root, 'public', 'favicon.ico')));
     app.use(express.static(path.join(config.root, 'public')));
@@ -40,6 +46,15 @@ module.exports = function (app) {
       }));
   }
 
+
+  app.use(session({
+      store: new RedisStore({
+        client: redisClient
+      }),
+      secret: 'grid-secret'
+    }
+  ));
+
   if ('development' === env || 'test' === env) {
     app.use(require('connect-livereload')());
     app.use(express.static(path.join(config.root, '.tmp')));
@@ -48,4 +63,6 @@ module.exports = function (app) {
     app.use(morgan('dev'));
     app.use(errorHandler()); // Error handler - has to be last
   }
+
 };
+
