@@ -17,4 +17,7 @@ var PixelSchema = new Schema({
 });
 
 PixelSchema.index({processed: 1, locked: 1, x: 1, y: 1}, {x: 1, y: 1});
+
+PixelSchema.set('redisCache', true)
+PixelSchema.set('expires', 300)
 module.exports = mongoose.model('Pixel', PixelSchema);

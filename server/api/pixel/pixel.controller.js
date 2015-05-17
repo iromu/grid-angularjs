@@ -22,7 +22,7 @@ var socket;
 var redis = require('redis');
 require('redis-streams')(redis);
 
-var redisClient = require('../../components/redis');
+var redisClient = require('../../components/redis').getRedisClient();
 
 var base64encode = require('base64-stream').Encode;
 var base64decode = require('base64-stream').Decode;
@@ -42,6 +42,7 @@ var retrievePNGStreamFor = function (cache_key, res, process) {
     } else {
       Pixel.find({image: 'lena.png'})
         .sort({x: +1, y: +1})
+        .lean()
         .exec(function (err, pixels) {
           if (err) {
             return handleError(res, err);

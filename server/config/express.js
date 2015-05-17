@@ -19,7 +19,7 @@ var passport = require('passport');
 var session = require('express-session');
 var RedisStore = require('connect-redis')(session);
 
-var redisClient = require('../components/redis');
+var redisClient = require('../components/redis').getRedisClient();
 
 module.exports = function (app) {
   var env = app.get('env');

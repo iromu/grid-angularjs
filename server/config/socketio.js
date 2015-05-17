@@ -8,7 +8,8 @@ var config = require('./environment');
 
 var _ = require('lodash');
 
-
+var redisAdapter = require('socket.io-redis');
+var redisClient = require('../components/redis').createClient;
 var connectedUsers = [];
 
 // When the user disconnects.. perform this
@@ -75,7 +76,7 @@ module.exports = function (socketio) {
   //   secret: config.secrets.session,
   //   handshake: true
   // }));
-
+  socketio.adapter(redisAdapter({pubClient: redisClient(), subClient: redisClient({detect_buffers: true})}));
   socketio.on('connection', function (socket) {
     socket.address = socket.handshake.address !== null ?
     socket.handshake.address.address + ':' + socket.handshake.address.port :
