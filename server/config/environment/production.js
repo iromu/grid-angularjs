@@ -21,6 +21,6 @@ module.exports = {
     'mongodb://localhost/grid'
   },
   redis: {
-    uri: process.env.REDISCLOUD_URL
+    uri: process.env.AWS_ELASTICACHE_URI || process.env.REDISCLOUD_URL || 'redis://localhost:6379'
   }
 };

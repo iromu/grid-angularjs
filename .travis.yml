@@ -6,4 +6,6 @@ before_install: sudo apt-get install libcairo2-dev libjpeg8-dev libpango1.0-dev 
 before_script:
   - npm install -g bower grunt-cli
   - bower install
-services: mongodb
+services:
+  - mongodb
+  - redis-server
