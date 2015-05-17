@@ -8,10 +8,10 @@
 [travis-image]: https://travis-ci.org/iromu/grid-angularjs.svg?branch=develop
 [travis-url]: https://travis-ci.org/iromu/grid-angularjs
 
-[dep-image]: https://david-dm.org/iromu/grid-angularjs/status.png
+[dep-image]: https://david-dm.org/iromu/grid-angularjs.svg
 [dep-url]: https://david-dm.org/iromu/grid-angularjs#info=dependencies&view=table
 
-[dev-dep-image]: https://david-dm.org/iromu/grid-angularjs/dev-status.png
+[dev-dep-image]: https://david-dm.org/iromu/grid-angularjs/dev-status.svg
 [dev-dep-url]: https://david-dm.org/iromu/grid-angularjs#info=devDependencies&view=table
 
 [heroku-image]: https://heroku-badge.herokuapp.com/?app=grid-angularjs
