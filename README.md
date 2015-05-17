@@ -1,10 +1,19 @@
 # grid angular.js
 
 [![Build Status][travis-image]][travis-url]
+[![Dependency Status][dep-image]][dep-url]
+[![Dev Dependency Status][dev-dep-image]][dev-dep-url]
 [![Heroku][heroku-image]][heroku-url]
 
 [travis-image]: https://travis-ci.org/iromu/grid-angularjs.svg?branch=develop
 [travis-url]: https://travis-ci.org/iromu/grid-angularjs
+
+[dep-image]: https://david-dm.org/iromu/grid-angularjs/status.png
+[dep-url]: https://david-dm.org/iromu/grid-angularjs#info=dependencies&view=table
+
+[dev-dep-image]: https://david-dm.org/iromu/grid-angularjs/dev-status.png
+[dev-dep-url]: https://david-dm.org/iromu/grid-angularjs#info=devDependencies&view=table
+
 [heroku-image]: https://heroku-badge.herokuapp.com/?app=grid-angularjs
 [heroku-url]: https://grid-angularjs.herokuapp.com
 
