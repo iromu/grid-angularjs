@@ -33,7 +33,8 @@ module.exports = function (grunt) {
         developBranch: 'develop',
         masterBranch: 'master',
         files: [
-          'package.json'
+          'package.json',
+          'bower.json'
         ],
         commitMessage: 'Release v%VERSION%',
         commitFiles: ['-a'], // '-a' for all files
