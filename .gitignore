@@ -5,9 +5,11 @@ public
 *.iml
 client/bower_components
 dist
+coverage
 /server/config/local.env.js
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
+!.elasticbeanstalk/*.sample
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml

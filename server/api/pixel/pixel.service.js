@@ -109,6 +109,7 @@ exports.getPixels = function (cb, errCb) {
       })
       .sort({x: +1, y: +1})
       .limit(99)
+      .lean()
       .exec(function (err, pixels) {
         if (!Array.isArray(pixels) || pixels.length === 0) {
           Lock.updating = false;
