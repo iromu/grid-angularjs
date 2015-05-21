@@ -1,6 +1,6 @@
 {
   "name": "grid",
-  "version": "0.0.4-SNAPSHOT",
+  "version": "0.0.4",
   "main": "server/app.js",
   "dependencies": {
     "base64-stream": "^0.1.2",
