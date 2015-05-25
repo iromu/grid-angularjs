@@ -4,8 +4,7 @@
   <div class="well hidden-xs">
     <p>
       Server sends to each browser a region of the image. Each client process the region to greyscale and returns a
-      pixel
-      array.
+      pixel array.
     </p>
   </div>
 
@@ -13,12 +12,12 @@
     <div class="col-md-3 col-sm-3 col-xs-6">
       <canvas id="snapshot" width="100" height="100" ng-init="loadSnapshot()">
       </canvas>
-      <p class="help-block">Local <strong>{{ pixelsReceived | number:0}}</strong> Pixels</p>
+      <p class="help-block">Local <strong ng-bind="pixelsReceived | number:0"></strong> Pixels</p>
     </div>
     <div class="col-md-3 col-sm-3 col-xs-6">
       <canvas id="preview" width="100" height="100">
       </canvas>
-      <p class="help-block">Grid <strong>{{ pixelsExternalProcessed | number:0}}</strong> Pixels</p>
+      <p class="help-block">Grid <strong ng-bind="pixelsExternalProcessed | number:0"></strong> Pixels</p>
     </div>
     <form role="form" class="form-horizontal col-md-6 col-sm-6  col-xs-12">
       <div class="input-group">

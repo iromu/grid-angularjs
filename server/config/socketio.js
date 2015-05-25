@@ -5,7 +5,7 @@
 'use strict';
 
 var config = require('./environment');
-
+var os = require("os");
 var _ = require('lodash');
 
 var redisAdapter = require('socket.io-redis');
@@ -15,6 +15,8 @@ var connectedUsers = [];
 // When the user disconnects.. perform this
 function onDisconnect(socket, io) {
 
+  console.info('[%s@%s#%s] Socket disconnected', socket.id, os.hostname(), config.uid);
+  socket.broadcast.emit('server:message', 'Socket disconnected ' + socket.id + ' to ' + os.hostname() + '#' + config.uid);
   socket.broadcast.emit('socket:disconnect', socket.id);
   //socket.broadcast.emit('socket:info', getConnectedUserIds());
   _.remove(connectedUsers, function (current) {
@@ -30,13 +32,17 @@ var getConnectedUserIds = function () {
   return ids;
 };
 function onConnect(socket, socketio) {
-  connectedUsers.push(socket);
 
+  console.info('[%s@%s#%s] Socket connected', socket.id, os.hostname(), config.uid);
+  connectedUsers.push(socket);
+  socket.emit('server:message', 'Welcome ' + socket.id + ' to ' + os.hostname() + '#' + config.uid);
   socket.broadcast.emit('socket:connect', socket.id);
+  socket.broadcast.emit('server:message', 'Socket connected ' + socket.id + ' to ' + os.hostname() + '#' + config.uid);
   //socket.broadcast.emit('socket:info', getConnectedUserIds());
   // When the client emits 'info', this listens and executes
   socket.on('socket:info', function (data) {
-    console.info('[%s] INFO %s', socket.id, JSON.stringify(data, null, 2));
+    console.info('[%s] INFO REQ %s', socket.id, JSON.stringify(data, null, 2));
+    console.info('[%s] INFO RES %s', socket.id, JSON.stringify(getConnectedUserIds(), null, 2));
     socket.emit('socket:info', getConnectedUserIds());
   });
   //connectedUsers[USER_NAME_HERE] = socket;
@@ -45,37 +51,24 @@ function onConnect(socket, socketio) {
   require('../api/pixel/pixel.socket').register(socket, socketio);
 }
 
-function joinRoom(socket, roomName, fn) {
+function joinRoom(socket, roomName) {
   socket.join(roomName);
-  socket.broadcast.to(roomName).emit('serverMessage', 'a user enters');
-  socket.emit('message', 'You enter in room ' + roomName);
-  console.info('[%s] joinRoom %s', socket.id, JSON.stringify(roomName, null, 2));
+  socket.broadcast.to(roomName).emit('server:message', 'a client enters');
+  socket.emit('server:message', 'You entered in room ' + roomName);
+  socket.emit('room:joined', roomName);
 
+  console.info('[%s@%s#%s] joined room %s', socket.id, os.hostname(), config.uid, JSON.stringify(roomName, null, 2));
 }
 
-function leaveRoom(socket, roomName, fn) {
+function leaveRoom(socket, roomName) {
   socket.leave(roomName);
-  socket.broadcast.to(roomName).emit('serverMessage', 'a user leaves');
-  socket.emit('message', 'You leave room ' + roomName);
+  socket.broadcast.to(roomName).emit('server:message', 'a user leaves');
+  socket.emit('server:message', 'You leave room ' + roomName);
 
-  console.info('[%s] leaveRoom %s', socket.id, JSON.stringify(roomName, null, 2));
+  console.info('[%s@%s#%s] leaveRoom %s', socket.id, os.hostname(), config.uid, JSON.stringify(roomName, null, 2));
 }
 
 module.exports = function (socketio) {
-  // socket.io (v1.x.x) is powered by debug.
-  // In order to see all the debug output, set DEBUG (in server/config/local.env.js) to including the desired scope.
-  //
-  // ex: DEBUG: "http*,socket.io:socket"
-
-  // We can authenticate socket.io users and access their token through socket.handshake.decoded_token
-  //
-  // 1. You will need to send the token in `client/components/socket/socket.service.js`
-  //
-  // 2. Require authentication here:
-  // socketio.use(require('socketio-jwt').authorize({
-  //   secret: config.secrets.session,
-  //   handshake: true
-  // }));
   socketio.adapter(redisAdapter({pubClient: redisClient(), subClient: redisClient({detect_buffers: true})}));
   socketio.on('connection', function (socket) {
     socket.address = socket.handshake.address !== null ?
@@ -84,17 +77,11 @@ module.exports = function (socketio) {
 
     socket.connectedAt = new Date();
 
-    socket.on('joinNetwork', function (roomName, fn) {
-      joinRoom(socket, roomName, fn);
+    socket.on('room:join', function (roomName) {
+      joinRoom(socket, roomName);
     });
-    socket.on('joinRoom', function (roomName, fn) {
-      joinRoom(socket, roomName, fn);
-    });
-    socket.on('leaveNetwork', function (roomName, fn) {
-      leaveRoom(socket, roomName, fn);
-    });
-    socket.on('leaveRoom', function (roomName, fn) {
-      leaveRoom(socket, roomName, fn);
+    socket.on('room:leave', function (roomName) {
+      leaveRoom(socket, roomName);
     });
 
     // Call onDisconnect.

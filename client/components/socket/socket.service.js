@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('gridApp')
-  .factory('socket', function (socketFactory) {
+  .factory('socket', function (socketFactory, $log) {
 
     // socket.io now auto-configures its connection when we ommit a connection url
     var ioSocket = io('', {
@@ -13,6 +13,10 @@ angular.module('gridApp')
 
     var socket = socketFactory({
       ioSocket: ioSocket
+    });
+
+    socket.on('server:message', function (message) {
+      $log.info('Message from server: ' + message);
     });
 
     return {

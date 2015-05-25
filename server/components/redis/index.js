@@ -6,9 +6,6 @@
   var redisConf = require("redis-url").parse(config.redis.uri);
 
   var mongooseRedisCache = require("mongoose-redis-cache");
-
-  console.log('redis connecting ' + redisConf.hostname + ':' + redisConf.port);
-
   module.exports.redisClient = undefined;
   module.exports.getRedisClient = function () {
     if (this.redisClient !== undefined) {
@@ -38,6 +35,8 @@
   };
 
   var newClient = function (options) {
+    console.log('redis connecting ' + redisConf.hostname + ':' + redisConf.port);
+
     var redisClient = redis.createClient(redisConf.port, redisConf.hostname, options); //creates a new client
     if (redisConf.password) {
       console.log('redis auth: ' + redisConf.password);

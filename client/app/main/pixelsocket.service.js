@@ -65,11 +65,11 @@
       };
 
       pixelSocketService.joinNetwork = function (network) {
-        socket.socket.emit('joinNetwork', network);
+        socket.socket.emit('room:join', network);
       };
 
       pixelSocketService.leaveNetwork = function (network) {
-        socket.socket.emit('leaveNetwork', network);
+        socket.socket.emit('room:leave', network);
       };
 
       return pixelSocketService;

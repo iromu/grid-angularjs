@@ -17,19 +17,18 @@
       this.onConnectCallback(s);
     }
 
-    socket.on('pixel:buffer:request', function () {
-      //console.info('[%s] pixel:buffer:request', socket.id);
+    socket.on('pixel:buffer:request', function (room) {
       service.getPixels(function (pixels) {
-        socket.emit('pixel:buffer:response', pixels);
+        socket.emit('pixel:buffer:response', pixels, room);
       }, function (imageName) {
         io.sockets.emit('snapshot', imageName);
       });
     });
 
-    socket.on('pixel:put', function (pixels) {
-      //console.info('[%s] pixel:put', socket.id);
+    socket.on('pixel:put', function (pixels, room) {
       service.savePixels(pixels, function () {
-        io.sockets.emit('pixel:batch:update', pixels);
+        io.sockets.emit('pixel:batch:update', pixels, room);
+        socket.emit('pixel:put:end', room);
       });
     });
 
