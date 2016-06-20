@@ -1,12 +1,12 @@
 'use strict';
 
-describe('Controller: MainCtrl', function () {
+describe('Controller: MainController', function () {
 
   // load the controller's module
   beforeEach(module('gridApp'));
   beforeEach(module('socketMock'));
 
-  var MainCtrl,
+  var MainController,
       scope,
       $httpBackend;
 
@@ -17,7 +17,7 @@ describe('Controller: MainCtrl', function () {
       .respond(['HTML5 Boilerplate', 'AngularJS', 'Karma', 'Express']);
 
     scope = $rootScope.$new();
-    MainCtrl = $controller('MainCtrl', {
+    MainController = $controller('MainController', {
       $scope: scope
     });
   }));

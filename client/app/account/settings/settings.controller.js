@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('gridApp')
-  .controller('SettingsCtrl', function ($scope, User, Auth) {
+  .controller('SettingsController', function ($scope, User, Auth) {
     $scope.errors = {};
 
     $scope.changePassword = function(form) {

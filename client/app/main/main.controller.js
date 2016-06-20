@@ -2,7 +2,7 @@
   'use strict';
 
   angular.module('gridApp')
-    .controller('MainCtrl', function ($scope, $log, $http, $filter, pixelSocketService, canvasViewService) {
+    .controller('MainController', function ($scope, $log, $http, $filter, pixelSocketService, canvasViewService) {
       //$scope.pixelBuffer = [];
       $scope.pixelsReceived = 0;
       $scope.maxWorkers = 0;

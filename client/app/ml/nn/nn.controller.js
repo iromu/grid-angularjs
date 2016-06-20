@@ -2,7 +2,7 @@
   'use strict';
 
   angular.module('gridApp')
-    .controller('MlNNCtrl', function ($scope, $interval, $timeout, nnView, trainerService) {
+    .controller('MlNNController', function ($scope, $interval, $timeout, nnView, trainerService) {
 
       $scope.infoMsg = '';
       $scope.number = {pick: 0, prediction: 0, sample: 0};
