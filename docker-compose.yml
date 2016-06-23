@@ -1,0 +1,30 @@
+version: '2'
+services:
+
+  web:
+    image: iromu/grid-angularjs:latest
+    environment:
+      - TCP_PORTS=8080
+      - BALANCE=source
+    links:
+      - redis
+      - mongo
+
+  redis:
+    image: redis:latest
+
+  mongo:
+    image: mongo:latest
+
+  lb:
+    image: dockercloud/haproxy
+    links:
+      - web
+    environment:
+      - DOCKER_TLS_VERIFY
+      - DOCKER_HOST
+      - DOCKER_CERT_PATH
+    volumes:
+      - $DOCKER_CERT_PATH:$DOCKER_CERT_PATH
+    ports:
+      - 80:8080

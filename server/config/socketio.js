@@ -5,17 +5,20 @@
 'use strict';
 
 var config = require('./environment');
-var os = require("os");
+var os = require('os');
 var _ = require('lodash');
 
 var redisAdapter = require('socket.io-redis');
-var redisClient = require('../components/redis').createClient;
+
+var redis = require('../components/redis');
 var connectedUsers = [];
+var logger;
+
 
 // When the user disconnects.. perform this
 function onDisconnect(socket, io) {
 
-  console.info('[%s@%s#%s] Socket disconnected', socket.id, os.hostname(), config.uid);
+  logger.info('[%s@%s#%s] Socket disconnected', socket.id, os.hostname(), config.uid);
   socket.broadcast.emit('server:message', 'Socket disconnected ' + socket.id + ' to ' + os.hostname() + '#' + config.uid);
   socket.broadcast.emit('socket:disconnect', socket.id);
   //socket.broadcast.emit('socket:info', getConnectedUserIds());
@@ -33,22 +36,24 @@ var getConnectedUserIds = function () {
 };
 function onConnect(socket, socketio) {
 
-  console.info('[%s@%s#%s] Socket connected', socket.id, os.hostname(), config.uid);
+  logger.info('[%s@%s#%s] Socket connected', socket.id, os.hostname(), config.uid);
   connectedUsers.push(socket);
   socket.emit('server:message', 'Welcome ' + socket.id + ' to ' + os.hostname() + '#' + config.uid);
   socket.broadcast.emit('socket:connect', socket.id);
   socket.broadcast.emit('server:message', 'Socket connected ' + socket.id + ' to ' + os.hostname() + '#' + config.uid);
   //socket.broadcast.emit('socket:info', getConnectedUserIds());
+
   // When the client emits 'info', this listens and executes
   socket.on('socket:info', function (data) {
-    console.info('[%s] INFO REQ %s', socket.id, JSON.stringify(data, null, 2));
-    console.info('[%s] INFO RES %s', socket.id, JSON.stringify(getConnectedUserIds(), null, 2));
+    logger.info('[%s] INFO REQ %s', socket.id, JSON.stringify(data, null, 2));
+    logger.info('[%s] INFO RES %s', socket.id, JSON.stringify(getConnectedUserIds(), null, 2));
     socket.emit('socket:info', getConnectedUserIds());
   });
+
   //connectedUsers[USER_NAME_HERE] = socket;
   // Insert sockets below
   require('../api/nn/nn.socket').register(socket);
-  require('../api/pixel/pixel.socket').register(socket, socketio);
+  require('../api/pixel/pixel.socket').register(socket, socketio, logger);
 }
 
 function joinRoom(socket, roomName) {
@@ -57,7 +62,7 @@ function joinRoom(socket, roomName) {
   socket.emit('server:message', 'You entered in room ' + roomName);
   socket.emit('room:joined', roomName);
 
-  console.info('[%s@%s#%s] joined room %s', socket.id, os.hostname(), config.uid, JSON.stringify(roomName, null, 2));
+  logger.info('[%s@%s#%s] joined room %s', socket.id, os.hostname(), config.uid, JSON.stringify(roomName, null, 2));
 }
 
 function leaveRoom(socket, roomName) {
@@ -65,11 +70,18 @@ function leaveRoom(socket, roomName) {
   socket.broadcast.to(roomName).emit('server:message', 'a user leaves');
   socket.emit('server:message', 'You leave room ' + roomName);
 
-  console.info('[%s@%s#%s] leaveRoom %s', socket.id, os.hostname(), config.uid, JSON.stringify(roomName, null, 2));
+  logger.info('[%s@%s#%s] leaveRoom %s', socket.id, os.hostname(), config.uid, JSON.stringify(roomName, null, 2));
 }
 
-module.exports = function (socketio) {
-  socketio.adapter(redisAdapter({pubClient: redisClient(), subClient: redisClient({detect_buffers: true})}));
+module.exports = function (socketio, l) {
+  logger = l;
+  redis.setLogger(logger);
+
+  socketio.adapter(redisAdapter({
+    pubClient: redis.getRedisClient({label: 'socket.io-redis pubClient'}),
+    subClient: redis.getRedisClient({label: 'socket.io-redis subClient', return_buffers: true})
+  }));
+
   socketio.on('connection', function (socket) {
     socket.address = socket.handshake.address !== null ?
     socket.handshake.address.address + ':' + socket.handshake.address.port :
@@ -87,10 +99,10 @@ module.exports = function (socketio) {
     // Call onDisconnect.
     socket.on('disconnect', function () {
       onDisconnect(socket, socketio);
-      console.info('[%s] DISCONNECTED', socket.id);
+      logger.info('[%s] DISCONNECTED', socket.id);
     });
 
-    console.info('[%s] CONNECTED', socket.id);
+    logger.info('[%s] CONNECTED', socket.id);
     // Call onConnect.
     onConnect(socket, socketio);
   });

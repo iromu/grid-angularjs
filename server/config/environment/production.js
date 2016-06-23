@@ -17,10 +17,12 @@ module.exports = {
   mongo: {
     uri: process.env.MONGOLAB_URI ||
     process.env.MONGOHQ_URL ||
+    process.env.MONGO_URL ||
     process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME ||
     'mongodb://localhost/grid'
   },
   redis: {
-    uri: process.env.AWS_ELASTICACHE_URI || process.env.REDISCLOUD_URL || 'redis://localhost:6379'
+    uri: process.env.AWS_ELASTICACHE_URI || process.env.REDISCLOUD_URL ||
+    process.env.REDIS_URL || 'redis://localhost:6379'
   }
 };

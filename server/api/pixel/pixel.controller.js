@@ -12,17 +12,15 @@
 var _ = require('lodash');
 var Pixel = require('./pixel.model');
 var Canvas = require('canvas');
-var Image = Canvas.Image;
 var fs = require('fs');
 var path = require('path');
 var width = 100;
 var height = 100;
-var socket;
 
 var redis = require('redis');
 require('redis-streams')(redis);
 
-var redisClient = require('../../components/redis').getRedisClient();
+var redisClient = require('../../components/redis').getRedisClient({label: 'Pixel'});
 
 var base64encode = require('base64-stream').Encode;
 var base64decode = require('base64-stream').Decode;

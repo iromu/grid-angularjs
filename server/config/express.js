@@ -15,11 +15,9 @@ var errorHandler = require('errorhandler');
 var path = require('path');
 var config = require('./environment');
 var passport = require('passport');
-
+var redis = require('../components/redis');
 var session = require('express-session');
 var RedisStore = require('connect-redis')(session);
-
-var redisClient = require('../components/redis').getRedisClient();
 
 module.exports = function (app) {
   var env = app.get('env');
@@ -49,7 +47,8 @@ module.exports = function (app) {
 
   app.use(session({
       store: new RedisStore({
-        client: redisClient
+        client: redis.getRedisClient({label: 'Express Session'})
+
       }),
       secret: 'grid-secret'
     }

@@ -108,7 +108,7 @@ exports.getPixels = function (cb, errCb) {
         image: 'lena.png'
       })
       .sort({x: +1, y: +1})
-      .limit(99)
+      .limit(100)
       .lean()
       .exec(function (err, pixels) {
         if (!Array.isArray(pixels) || pixels.length === 0) {

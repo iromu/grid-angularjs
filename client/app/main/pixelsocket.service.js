@@ -2,12 +2,12 @@
   'use strict';
 
   angular.module('gridApp')
-    .factory('pixelSocketService', function (socket) {
+    .factory('pixelSocketService', function (socket, $log) {
       var pixelSocketService = angular.extend(socket, {});
 
       pixelSocketService.bindArray = function (array) {
         socket.socket.on('socket:connect', function (id) {
-          // $log.warn('Connected ' + id);
+          $log.debug('Connected ' + id);
           array.push(id);
         });
         socket.socket.on('socket:info', function (ids) {
@@ -29,6 +29,7 @@
       pixelSocketService.onSnapshot = function (cb) {
         cb = cb || angular.noop;
         socket.socket.on('snapshot', function (imageName) {
+          $log.debug('snapshot');
           cb(imageName);
         });
       };

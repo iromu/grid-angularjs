@@ -54,13 +54,13 @@ module.exports = function (grunt) {
       },
       dev: {
         options: {
-          script: 'server/app.js',
+          script: 'server.js',
           debug: true
         }
       },
       prod: {
         options: {
-          script: 'dist/server/app.js'
+          script: 'dist/server.js'
         }
       }
     },
@@ -211,7 +211,7 @@ module.exports = function (grunt) {
     // Use nodemon to run server in debug mode with an initial breakpoint
     nodemon: {
       debug: {
-        script: 'server/app.js',
+        script: 'server.js',
         options: {
           nodeArgs: ['--debug-brk'],
           env: {
@@ -390,6 +390,7 @@ module.exports = function (grunt) {
             '.buildpacks',
             '.ebextensions/*.config',
             '.elasticbeanstalk/*.yml',
+            'server.js',
             'server/**/*'
           ]
         }]

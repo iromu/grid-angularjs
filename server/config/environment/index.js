@@ -40,7 +40,7 @@ var all = {
         safe: true
       }
     }
-  },
+  }
 
 };
 

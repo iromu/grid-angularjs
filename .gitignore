@@ -13,3 +13,5 @@ coverage
 !.elasticbeanstalk/*.sample
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+
+*.log

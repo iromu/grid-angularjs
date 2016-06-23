@@ -5,30 +5,40 @@
 
   'use strict';
 
+  var _ = require('lodash');
   var service = require('./pixel.service.js');
 
   exports.onConnectCallback = null;
 
-  exports.register = function (s, sio) {
+  exports.register = function (s, sio, l) {
     var socket = s;
     var io = sio;
+    var room;
+    var logger = l;
 
     if (this.onConnectCallback) {
       this.onConnectCallback(s);
     }
 
-    socket.on('pixel:buffer:request', function (room) {
+    socket.on('pixel:buffer:request', function (_room) {
+      room = _room;
+      logger.debug('[%s] pixel:buffer:request %s', socket.id, room);
       service.getPixels(function (pixels) {
-        socket.emit('pixel:buffer:response', pixels, room);
+        socket.emit('pixel:buffer:response', pixels);
       }, function (imageName) {
         io.sockets.emit('snapshot', imageName);
       });
     });
 
-    socket.on('pixel:put', function (pixels, room) {
+    socket.on('pixel:put', function (pixels) {
+
+      logger.debug('[%s] pixel:put %s', socket.id, JSON.stringify(_.size(pixels), null, 2));
+
       service.savePixels(pixels, function () {
-        io.sockets.emit('pixel:batch:update', pixels, room);
-        socket.emit('pixel:put:end', room);
+        var pixelSize = _.size(pixels);
+        logger.debug('[%s] pixel:batch:update %s', room, JSON.stringify(pixelSize, null, 2));
+        socket.broadcast.emit('pixel:batch:update', pixels);
+        socket.emit('pixel:put:end', pixelSize);
       });
     });
 
