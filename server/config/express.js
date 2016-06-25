@@ -50,6 +50,9 @@ module.exports = function (app) {
         client: redis.getRedisClient({label: 'Express Session'})
 
       }),
+    proxy: true,
+    resave: true,
+    saveUninitialized: true,
       secret: 'grid-secret'
     }
   ));

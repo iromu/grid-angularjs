@@ -22,12 +22,13 @@ function createLogger(settings) {
     appName = pkg.name,
     appVersion = pkg.version,
     logDir = settings.dir || path.join(__dirname, 'logs'),
-    logFile = path.join(logDir, appName + '-log.json'),
-    logErrorFile = path.join(logDir, appName + '-errors.json'),
     logLevel = settings.level || 'debug';
 
   var log;
   if (logDir !== 'CONSOLE') {
+
+    var logFile = path.join(logDir, appName + '-log.json');
+    var logErrorFile = path.join(logDir, appName + '-errors.json');
 
     // Create log directory if it doesnt exist
     if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
@@ -36,10 +37,6 @@ function createLogger(settings) {
     log = bunyan.createLogger({
       name: appName,
       streams: [
-        {
-          stream: process.stdout,
-          level: 'debug'
-        },
         {
           path: logFile,
           level: logLevel,
@@ -60,7 +57,7 @@ function createLogger(settings) {
     log = bunyan.createLogger({
       name: appName,
       streams: [{
-        level: 'debug',
+        level: logLevel,
         type: 'raw',
         stream: bunyanToConsole
       }]
