@@ -5,10 +5,33 @@
   var redis = require('redis');
   var redisConf = require("redis-url").parse(config.redis.uri);
   var mongooseRedisCache = require("mongoose-redis-cache");
-  var logger;
+  var logger = require('../../logging').getLogger();
+
 
   module.exports.redisClient = undefined;
   module.exports.redisClientBufffers = undefined;
+
+  var newClient = function (options) {
+    logger.info('[' + options.label + '] Redis connecting ' + redisConf.hostname + ':' + redisConf.port);
+
+    var redisClient = redis.createClient(redisConf.port, redisConf.hostname, options); //creates a new client
+    if (redisConf.password) {
+      logger.info('[' + options.label + '] redis auth: ' + redisConf.password);
+      redisClient.auth(redisConf.password, function (err) {
+        if (err) throw err;
+      });
+    }
+
+    redisClient.on('connect', function () {
+      logger.info('[' + options.label + '] new redis client connected');
+    });
+
+    redisClient.on('error', function (err) {
+      logger.error('[' + options.label + '] redis error ' + err);
+    });
+
+    return redisClient;
+  };
 
   module.exports.getRedisClient = function (options) {
     if (options.return_buffers) {
@@ -51,25 +74,4 @@
     }
   };
 
-  var newClient = function (options) {
-    logger.info('[' + options.label + '] Redis connecting ' + redisConf.hostname + ':' + redisConf.port);
-
-    var redisClient = redis.createClient(redisConf.port, redisConf.hostname, options); //creates a new client
-    if (redisConf.password) {
-      this.logger.info('[' + options.label + '] redis auth: ' + redisConf.password);
-      redisClient.auth(redisConf.password, function (err) {
-        if (err) throw err;
-      });
-    }
-
-    redisClient.on('connect', function () {
-      logger.info('[' + options.label + '] new redis client connected');
-    });
-
-    redisClient.on('error', function (err) {
-      logger.error('[' + options.label + '] redis error ' + err);
-    });
-
-    return redisClient;
-  };
 }());

@@ -13,7 +13,6 @@
   exports.register = function (s, sio, l) {
     var socket = s;
     var io = sio;
-    var room;
     var logger = l;
 
     if (this.onConnectCallback) {
@@ -21,24 +20,34 @@
     }
 
     socket.on('pixel:buffer:request', function (_room) {
-      room = _room;
-      logger.debug('[%s] pixel:buffer:request %s', socket.id, room);
-      service.getPixels(function (pixels) {
-        socket.emit('pixel:buffer:response', pixels);
+      var room = _room;
+      logger.debug('[%s] pixel:buffer:request room %s', socket.id, room);
+
+      service.getPixels(room).then(function (data) {
+
+        logger.debug('[%s] pixel:buffer:response %s', data.room, JSON.stringify(_.size(data.pixels), null, 2));
+        socket.emit('pixel:buffer:response', data);
+
       }, function (imageName) {
-        io.sockets.emit('snapshot', imageName);
+
+        logger.debug('to [%s] snapshot %s', room, JSON.stringify(imageName, null, 2));
+        socket.to(room).emit('snapshot', {imageName: imageName, room: room});
+
       });
+
     });
 
-    socket.on('pixel:put', function (pixels) {
+    socket.on('pixel:put', function (request) {
+      var room = request.room;
+      logger.debug('[%s] pixel:put %s', socket.id, JSON.stringify(_.size(request.pixels), null, 2));
 
-      logger.debug('[%s] pixel:put %s', socket.id, JSON.stringify(_.size(pixels), null, 2));
+      service.savePixels(request.pixels, function () {
 
-      service.savePixels(pixels, function () {
-        var pixelSize = _.size(pixels);
+        var pixelSize = _.size(request.pixels);
         logger.debug('[%s] pixel:batch:update %s', room, JSON.stringify(pixelSize, null, 2));
-        socket.broadcast.emit('pixel:batch:update', pixels);
-        socket.emit('pixel:put:end', pixelSize);
+        socket.to(room).emit('pixel:batch:update', {room: request.room, pixels: request.pixels});
+        socket.emit('pixel:put:end', {pixelSize: pixelSize, room: request.room});
+
       });
     });
 

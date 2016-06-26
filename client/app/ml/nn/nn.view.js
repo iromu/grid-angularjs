@@ -25,14 +25,14 @@
         loadRegionForTraining: function (index) {
           var region = canvasViewService.getRegion('#numbersCanvas', index, 20);
           canvasViewService.setImageData('#trainingCanvas', region.imageData);
-          canvasViewService.drawSelection('#numbersCanvasOverlay', region.selection);
+          canvasViewService.drawSelection('#numbersCanvasOverlay', region.selection, 'lime', true);
           return region.imageData;
         },
         loadRegionForPrediction: function (index, draw) {
           var region = canvasViewService.getRegion('#numbersCanvas', index, 20);
           canvasViewService.setImageData('#predictionCanvas', region.imageData);
           if (draw) {
-            canvasViewService.drawSelection('#numbersCanvasOverlay', region.selection, 'cyan');
+            canvasViewService.drawSelection('#numbersCanvasOverlay', region.selection, 'cyan', true);
           }
           return region.imageData;
         },

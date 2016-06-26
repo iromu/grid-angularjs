@@ -12,7 +12,7 @@ var redisAdapter = require('socket.io-redis');
 
 var redis = require('../components/redis');
 var connectedUsers = [];
-var logger;
+var logger = require('../logging').getLogger();
 
 
 // When the user disconnects.. perform this
@@ -60,6 +60,7 @@ function joinRoom(socket, roomName) {
   socket.join(roomName);
   socket.broadcast.to(roomName).emit('server:message', 'a client enters');
   socket.emit('server:message', 'You entered in room ' + roomName);
+
   socket.emit('room:joined', roomName);
 
   logger.info('[%s@%s#%s] joined room %s', socket.id, os.hostname(), config.uid, JSON.stringify(roomName, null, 2));
@@ -92,6 +93,7 @@ module.exports = function (socketio, l) {
     socket.on('room:join', function (roomName) {
       joinRoom(socket, roomName);
     });
+
     socket.on('room:leave', function (roomName) {
       leaveRoom(socket, roomName);
     });

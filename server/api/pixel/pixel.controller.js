@@ -11,85 +11,33 @@
 
 var _ = require('lodash');
 var Pixel = require('./pixel.model');
-var Canvas = require('canvas');
-var fs = require('fs');
-var path = require('path');
-var width = 100;
-var height = 100;
+var service = require('./pixel.service.js');
+var logger = require('../../logging').getLogger();
 
-var redis = require('redis');
-require('redis-streams')(redis);
-
-var redisClient = require('../../components/redis').getRedisClient({label: 'Pixel'});
-
-var base64encode = require('base64-stream').Encode;
-var base64decode = require('base64-stream').Decode;
-
-var PassThrough = require('stream').PassThrough;
-
-var retrievePNGStreamFor = function (cache_key, res, process) {
-  redisClient.exists(cache_key, function (err, exists) {
-    if (err) {
-      return handleError(res, err);
-    }
-
-    if (exists) {
-      console.log(cache_key + ' from cache');
-      return redisClient.readStream(cache_key)
-        .pipe(base64decode()).pipe(res);
-    } else {
-      Pixel.find({image: 'lena.png'})
-        .sort({x: +1, y: +1})
-        .lean()
-        .exec(function (err, pixels) {
-          if (err) {
-            return handleError(res, err);
-          }
-
-          console.log(cache_key);
-          var canvas = new Canvas(width, height);
-          var ctx = canvas.getContext('2d');
-
-          var id = ctx.createImageData(1, 1);
-          var d = id.data;
-          process(pixels, d, ctx, id);
-          var stream = canvas.syncPNGStream();
-          var base64pass = new PassThrough();
-          stream.pipe(base64pass)
-            .pipe(base64encode())
-            .pipe(redisClient.writeStream(cache_key, 5));
-          stream.pipe(res);
-        });
-    }
+var process = function (pixels, d, ctx, id) {
+  pixels.forEach(function (pixel) {
+    d[0] = pixel.r || 0;
+    d[1] = pixel.g || 0;
+    d[2] = pixel.b || 0;
+    d[3] = pixel.a || 255;
+    ctx.putImageData(id, pixel.x, pixel.y);
   });
 };
+
 exports.snapshot = function (req, res) {
-  var process = function (pixels, d, ctx, id) {
-    pixels.forEach(function (pixel) {
-      d[0] = pixel.r;
-      d[1] = pixel.g;
-      d[2] = pixel.b;
-      d[3] = pixel.a || 255;
-      ctx.putImageData(id, pixel.x, pixel.y);
+  var cache_key = 'pixels:snapshot:' + req.params.room;
+  service.retrievePNGStreamFor(cache_key, res, process, 'raw', 1)
+    .catch(function (err) {
+      handleError(res, err);
     });
-  };
-  var cache_key = '/api/pixels/snapshot';
-  retrievePNGStreamFor(cache_key, res, process);
 };
 
 exports.preview = function (req, res) {
-  var process = function (pixels, d, ctx, id) {
-    pixels.forEach(function (pixel) {
-      d[0] = pixel.s;
-      d[1] = pixel.s;
-      d[2] = pixel.s;
-      d[3] = pixel.a || 255;
-      ctx.putImageData(id, pixel.x, pixel.y);
+  var cache_key = 'pixels:preview:' + req.params.room;
+  service.retrievePNGStreamFor(cache_key, res, process, req.params.room, 1)
+    .catch(function (err) {
+      handleError(res, err);
     });
-  };
-
-  var cache_key = '/api/pixels/preview';
-  retrievePNGStreamFor(cache_key, res, process);
 };
 
 // Updates an existing pixel in the DB.

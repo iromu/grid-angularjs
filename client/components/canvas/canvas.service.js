@@ -1,7 +1,8 @@
 'use strict';
 
+
 angular.module('gridApp')
-  .factory('canvasViewService', function () {
+  .factory('canvasViewService', function ($timeout) {
 
     var calcWindowSlice = function (region, width, height, size) {
       var maxRegionW = Math.floor(width / size);
@@ -46,7 +47,7 @@ angular.module('gridApp')
         setPixel(imageData, 0, 0, item.r, item.g, item.b, item.a);
         c.putImageData(imageData, item.x, item.y);
       });
-
+      c.save();
     };
 
     var clearImage = function (id) {
@@ -66,6 +67,7 @@ angular.module('gridApp')
       var drawing = new Image();
       drawing.src = url;
       drawing.onload = function () {
+        c.clearRect(0, 0, canvas.width, canvas.height);
         c.drawImage(drawing, 0, 0);
         cb();
       };
@@ -95,31 +97,64 @@ angular.module('gridApp')
       return c.putImageData(imageData, 0, 0);
     };
 
+    var drawSelection = function (id, selection, style, redraw) {
+      var element = getCanvas(id);
+      var c = element.getContext('2d');
+      if (redraw) c.clearRect(0, 0, element.width, element.height);
+      c.beginPath();
+      c.rect(selection.x, selection.y, selection.size, selection.size);
+      c.strokeStyle = style || 'lime';
+      c.stroke();
+    };
+
+    var drawProcessed = function (items, setPixel, imageData, c) {
+      items.forEach(function (item) {
+        if (!item.a) {
+          item.a = 255;
+        }
+        setPixel(imageData, 0, 0, 255, item.g, item.b, item.a);
+        c.putImageData(imageData, item.x, item.y);
+      });
+    };
+
     // Public API here
     return {
       getRegion: function (id, region, size) {
         return getRegion(id, region, size);
       },
-      drawSelection: function (id, selection, style) {
-        var element = getCanvas(id);
-        var c = element.getContext('2d');
-        c.clearRect(0, 0, element.width, element.height);
-        c.beginPath();
-        c.rect(selection.x, selection.y, selection.size, selection.size);
-        c.strokeStyle = style || 'lime';
-        c.stroke();
+      drawSelection: function (id, selection, style, redraw) {
+        drawSelection(id, selection, style, redraw);
       },
       pixelBatchUpdate: function (id, pixels) {
-        pixelBatchUpdate(id, pixels);
+        if (pixels[0].s !== null)
+          pixelBatchUpdate(id, _.map(pixels, function (pixel) {
+            pixel.r = pixel.s;
+            pixel.g = pixel.s;
+            pixel.b = pixel.s;
+            return pixel;
+          }));
+        else
+          pixelBatchUpdate(id, pixels);
+      },
+      writeGreyChannel: function (id, pixels) {
+        pixelBatchUpdate(id, _.map(pixels, function (pixel) {
+          pixel.r = pixel.s;
+          pixel.g = pixel.s;
+          pixel.b = pixel.s;
+          return pixel;
+        }));
+      },
+      pixelBatchUpdateFx: function (id, pixels, fx) {
+        var p = new Parallel([id, pixels, fx]);
+        p.spawn(function (data) {
+          pixelBatchUpdate(data[0], data[1]);
+        }).then(function (data) {
+          //setTimeout(pixelBatchUpdate(id, pixels),1000);
+        });
+
       },
       drawProcessed: function (c, imageData, items) {
-        items.forEach(function (item) {
-          if (!item.a) {
-            item.a = 255;
-          }
-          setPixel(imageData, 0, 0, 255, item.g, item.b, item.a);
-          c.putImageData(imageData, item.x, item.y);
-        });
+        drawProcessed(items, setPixel, imageData, c);
       },
       loadImage: function (id, url, cb) {
         loadImage(id, url, cb);

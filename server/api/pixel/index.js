@@ -5,9 +5,9 @@ var controller = require('./pixel.controller');
 
 var router = express.Router();
 
-router.get('/snapshot', controller.snapshot);
-router.get('/preview', controller.preview);
-router.put('/', controller.update);
-router.patch('/', controller.update);
+router.get('/snapshot/:room', controller.snapshot);
+router.get('/preview/:room', controller.preview);
+router.put('/:room', controller.update);
+router.patch('/:room', controller.update);
 
 module.exports = router;

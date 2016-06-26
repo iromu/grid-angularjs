@@ -4,6 +4,7 @@ var mongoose = require('mongoose'),
   Schema = mongoose.Schema;
 
 var PixelSchema = new Schema({
+  room: String,
   image: String,
   x: {type: Number, index: true},
   y: {type: Number, index: true},
@@ -16,7 +17,11 @@ var PixelSchema = new Schema({
   locked: {type: Boolean, index: true}
 });
 
-PixelSchema.index({processed: 1, locked: 1, x: 1, y: 1}, {x: 1, y: 1});
+PixelSchema.index(
+  {room: 1, image: 1, processed: 1, locked: 1, x: 1, y: 1},
+  {x: 1, y: 1},
+  {image: 1, room: 1}
+);
 
 PixelSchema.set('redisCache', true)
 PixelSchema.set('expires', 300)

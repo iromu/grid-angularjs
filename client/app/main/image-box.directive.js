@@ -4,37 +4,38 @@
     .directive('imageBox', imageBox);
 
   function imageBox() {
+
+    function linkFunc(scope, el, attr, ctrl) {
+      scope.vm.preview = el.find('canvas')[0];
+      scope.vm.overlay = el.find('canvas')[1];
+      ctrl.init();
+    }
+
     var directive = {
       templateUrl: 'app/main/image-box.html',
       restrict: 'EA',
       scope: {
-        max: '='
+        room: '='
       },
       replace: true,
+      link: linkFunc,
       controller: ImageBoxController,
       controllerAs: 'vm',
       bindToController: true
     };
+
     return directive;
 
   }
 
-  ImageBoxController.$inject = ['$scope', '$log', '$http',
-    'pixelSocketService', 'canvasViewService'];
+  ImageBoxController.$inject = ['$scope', '$log', '$http', '$timeout', 'pixelSocketService', 'canvasViewService'];
 
-  function ImageBoxController($scope, $log, $http, pixelSocketService, canvasViewService) {
+  function ImageBoxController($scope, $log, $http, $timeout, pixelSocketService, canvasViewService) {
     var vm = this;
-
-    vm.min = 3;
-
-    console.log('CTRL: $scope.vm.min = %s', $scope.vm.min);
-    console.log('CTRL: $scope.vm.max = %s', $scope.vm.max);
-    console.log('CTRL: vm.min = %s', vm.min);
-    console.log('CTRL: vm.max = %s', vm.max);
 
     //vm.pixelBuffer = [];
     vm.pixelsReceived = 0;
-    vm.maxWorkers = 0;
+    vm.maxWorkers = 2;
     vm.pixelsExternalProcessed = 0;
     vm.serverResponse = '';
     vm.lastError = '';
@@ -44,45 +45,60 @@
     vm.joined = false;
     vm.stopRequestingBuffer = true;
 
-    var pixelSocketServiceListening = false;
+    vm.pixelSocketServiceListening = false;
 
 
     var process = function (pixels) {
+
+      $log.debug('process');
+
       if (Array.isArray(pixels) && pixels.length > 0) {
-        var onWorkDone = function (pixels) {
-          vm.putPixels(pixels);
-          canvasViewService.pixelBatchUpdate('#snapshot', pixels.map(function (pixel) {
-            pixel.r = 255;
-            pixel.a = 100;
-            return pixel;
-          }));
-          canvasViewService.pixelBatchUpdate('#preview', pixels.map(function (pixel) {
+        $log.debug('process Array');
+
+        var job = function (pixel) {
+          if (vm.room === 'grey') {
+            pixel.s = Math.round((pixel.r + pixel.g + pixel.b) / 3);
             pixel.r = pixel.s;
-            pixel.g = pixel.s + 50;
+            pixel.g = pixel.s;
             pixel.b = pixel.s;
+          } else if (vm.room === 'invert') {
+            pixel.s = null;
+            pixel.r = 255 - pixel.r;
+            pixel.g = 255 - pixel.g;
+            pixel.b = 255 - pixel.b;
+          }
+          return pixel;
+        };
+
+        var onWorkDone = function (pixels) {
+          if (vm.room === 'grey') {
+            vm.putPixels(vm.room, compressGrey(pixels));
+          } else {
+            vm.putPixels(vm.room, pixels);
+          }
+
+          canvasViewService.pixelBatchUpdate(vm.preview, _.map(pixels, function (pixel) {
+            pixel.g = pixel.g + 10;
             return pixel;
           }));
-          setTimeout(vm.loadPixelBuffer, 500);
+
+          var selection = {
+            size: 100,
+            width: 10,
+            height: 10,
+            x: _.min(pixels, function (o) {
+              return o.x;
+            }),
+            y: _.min(pixels, function (o) {
+              return o.y;
+            })
+          };
+
+
         };
 
         vm.pixelsReceived += pixels.length;
-        if (vm.maxWorkers > 0) {
-          var p = new Parallel(pixels, {maxWorkers: vm.maxWorkers});
-          var job = function (item) {
-            item.s = Math.round((item.r + item.g + item.b) / 3);
-            return item;
-          };
-          p.map(job).then(function (arrayProcessed) {
-            onWorkDone(arrayProcessed);
-          });
-        } else {
-          pixels.forEach(function (item) {
-              item.s = Math.round((item.r + item.g + item.b) / 3);
-            }
-          );
-          onWorkDone(pixels);
-        }
-
+        onWorkDone(_.map(pixels, job));
       }
     };
 
@@ -92,27 +108,25 @@
 
       pixelSocketService.onSnapshot(function (imageName) {
         vm.imageName = imageName;
-        vm.loadSnapshot();
+        vm.loadPreview();
       });
 
-      pixelSocketService.onPixelBatchUpdate(function (pixels) {
+      pixelSocketService.onPixelBatchUpdate(function (data) {
+        var pixels = data.pixels;
         if (Array.isArray(pixels) && pixels.length > 0) {
           vm.pixelsExternalProcessed += pixels.length;
           vm.pixelsExternalProcessedPercent = vm.pixelsExternalProcessed / 100;
-          canvasViewService.pixelBatchUpdate('#preview', pixels.map(function (pixel) {
-            pixel.r = pixel.s;
-            pixel.g = pixel.s;
-            pixel.b = pixel.s;
-            return pixel;
-          }));
+          //canvasViewService.drawSelection(vm.overlay, data.selection, 'cyan');
+          canvasViewService.pixelBatchUpdate(vm.preview, pixels);
         } else {
           $log.warn('onPixelBatchUpdate() empty array received.');
         }
       });
 
-      pixelSocketService.onPixelBufferResponse(function (pixels) {
-
+      pixelSocketService.onPixelBufferResponse(vm.room, function (data) {
+        var pixels = data.pixels;
         if (Array.isArray(pixels) && pixels.length > 0) {
+          canvasViewService.drawSelection(vm.overlay, data.selection, '#CCFFCC');
           process(pixels);
         } else {
           $log.warn('onPixelBufferResponse() empty array received for processing.');
@@ -120,36 +134,42 @@
         }
       });
 
-      pixelSocketServiceListening = true;
+      pixelSocketService.onPutPixelsEnd(vm.room, function (data) {
+        vm.loadPixelBuffer();
+      });
+
+      pixelSocketService.onJoinNetwork(vm.room, function (room) {
+        vm.loadPixelBuffer();
+      });
+
+      vm.pixelSocketServiceListening = true;
 
     };
 
     vm.joinNetwork = function () {
       if (vm.stopRequestingBuffer === false) {
-        pixelSocketService.joinNetwork('grey');
-        pixelSocketService.requestPixelBuffer();
+        pixelSocketService.joinNetwork(vm.room);
       }
     };
     vm.leaveNetwork = function () {
       if (vm.stopRequestingBuffer === false) {
-        pixelSocketService.leaveNetwork('grey');
+        pixelSocketService.leaveNetwork(vm.room);
       }
     };
     vm.loadPixelBuffer = function () {
       if (vm.stopRequestingBuffer === false) {
-        pixelSocketService.requestPixelBuffer();
+        pixelSocketService.requestPixelBuffer(vm.room);
       }
     };
 
     function compressGrey(pixels) {
-      var min = pixels.map(function (pixel) {
+      return pixels.map(function (pixel) {
         return {_id: pixel._id, x: pixel.x, y: pixel.y, s: pixel.s};
       });
-      return min;
     }
 
-    vm.putPixels = function (pixels) {
-      pixelSocketService.putPixels(compressGrey(pixels));
+    vm.putPixels = function (room, pixels) {
+      pixelSocketService.putPixels({room: room, pixels: pixels});
     };
 
     $scope.$on('$destroy', function () {
@@ -159,26 +179,26 @@
       pixelSocketService.unsync();
     });
 
-    vm.loadSnapshot = function () {
+    vm.loadPreview = function () {
       vm.stopRequestingBuffer = true;
 
       vm.pixelsReceived = 0;
       vm.pixelsExternalProcessed = 0;
       vm.pixelsExternalProcessedPercent = 0;
 
-      canvasViewService.clearImage('#snapshot');
-      canvasViewService.loadImage('#snapshot', 'api/pixels/snapshot', function () {
-        // vm.lastError = '';
+      canvasViewService.clearImage(vm.preview);
+      canvasViewService.clearImage(vm.overlay);
 
-        if (!pixelSocketServiceListening) {
+      canvasViewService.loadImage(vm.preview, 'api/pixels/preview/' + vm.room, function () {
+
+        if (!vm.pixelSocketServiceListening) {
           addListeners();
         }
         if (vm.joined === true) {
+          $log.warn('loadPixelBuffer after loading snapshot');
           vm.stopRequestingBuffer = false;
-          setTimeout(vm.loadPixelBuffer, 2000);
+          $timeout(vm.loadPixelBuffer, 2000);
         }
-        canvasViewService.clearImage('#preview');
-        canvasViewService.loadImage('#preview', 'api/pixels/preview');
 
       });
 
@@ -192,21 +212,25 @@
       if (vm.joined === false) {
         vm.joined = true;
         vm.stopRequestingBuffer = false;
-        $('#toggleButton').removeClass('btn-success');
-        $('#toggleButton').addClass('btn-danger');
-        $('#toggleButton').text('Quit');
+        vm.toggleButtonClass = 'btn-danger';
+        vm.toggleButtonText = 'Quit';
         vm.joinNetwork();
       } else {
         vm.stopRequestingBuffer = true;
         vm.joined = false;
 
         vm.leaveNetwork();
-        $('#toggleButton').removeClass('btn-danger');
-        $('#toggleButton').addClass('btn-success');
+        vm.toggleButtonClass = 'btn-success';
 
-        $('#toggleButton').text('Join');
+        vm.toggleButtonText = 'Join';
       }
     };
 
-  };
+    vm.init = function () {
+      vm.toggleButtonText = 'Join';
+      vm.loadPreview();
+      vm.randomSolve();
+
+    };
+  }
 }());

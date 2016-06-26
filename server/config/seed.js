@@ -28,11 +28,10 @@ var readNnXFile = function () {
 };
 
 
-var readLenaFile = function () {
+var readFile = function (png) {
 
-//  console.log('Read file ' + __dirname + LENA_PNG);
-  var lena = fs.readFileSync(LENA_PNG);
-  var img = new Image;
+  var lena = fs.readFileSync(png);
+  var img = new Image();
   img.src = lena;
 
   var canvas = new Canvas(img.width, img.height);
@@ -40,13 +39,20 @@ var readLenaFile = function () {
   ctx.drawImage(img, 0, 0, img.width, img.height);
 
   var pixels = [];
-  for (var x = 0; x < img.width; x++) {
-    for (var y = 0; y < img.height; y++) {
-      var d = ctx.getImageData(x, y, 1, 1);
-      var pixel = {x: x, y: y, r: d.data[0], g: d.data[1], b: d.data[2], image: 'lena.png'};
-      pixels.push(pixel);
+
+  var processPixels = function (room) {
+    for (var x = 0; x < img.width; x++) {
+      for (var y = 0; y < img.height; y++) {
+        var d = ctx.getImageData(x, y, 1, 1);
+        pixels.push({x: x, y: y, r: d.data[0], g: d.data[1], b: d.data[2], image: png.split("/").pop(), room: room});
+      }
     }
-  }
+  };
+
+  processPixels('grey');
+  processPixels('raw');
+  processPixels('invert');
+
   return pixels;
 };
 
@@ -54,10 +60,10 @@ var readLenaFile = function () {
 Pixel.find({}).remove(function () {
   var pixels = [];
   var save = false;
-  if (!fs.existsSync(LENA_JSON)) {
+  if (true || !fs.existsSync(LENA_JSON)) {
     console.log('Reading png file');
-    pixels = readLenaFile();
-    save = true;
+    pixels = readFile(LENA_PNG);
+    save = false;
   } else {
     console.log('Reading json file');
     pixels = readJson(LENA_JSON);
@@ -66,6 +72,11 @@ Pixel.find({}).remove(function () {
     if (save) fs.writeFileSync(LENA_JSON, JSON.stringify(pixels));
     console.log('finished populating ' + pixels.length + ' pixels for lena.png');
   });
+});
+
+
+Pixel.find({}).remove(function () {
+
 });
 
 User.find({}).remove(function () {

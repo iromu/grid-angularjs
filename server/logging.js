@@ -7,8 +7,17 @@ var fs = require('fs'),
   bunyan = require('bunyan');
 
 
+exports.getLogger = getLogger;
 exports.createLogger = createLogger;
 
+var logger = null;
+
+function getLogger() {
+  if (logger === null)
+    return createLogger({dir: "CONSOLE", level: "debug"});
+  else
+    return logger;
+}
 
 /*
  * configure and start logging
@@ -67,6 +76,6 @@ function createLogger(settings) {
   log.info('Starting ' + appName + ', version ' + appVersion);
   log.info('Environment set to ' + process.env.NODE_ENV);
   log.debug('Logging setup completed.');
-
+  logger = log;
   return log;
 }

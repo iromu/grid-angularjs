@@ -2,6 +2,9 @@
 
 'use strict';
 
+//add timestamps in front of log messages
+require('console-stamp')(console, 'UTC:yyyy-mm-dd\'T\'HH:MM:ss.l\'Z\'');
+
 var config = require('./config/environment');
 var sticky = require('sticky-cluster');
 var logging = require('./logging');
@@ -11,8 +14,11 @@ var express = require('express');
 var config = require('./config/environment');
 // if process.env.NODE_ENV has not been set, default to development
 var NODE_ENV = process.env.NODE_ENV || 'development';
+var mongoose = require('mongoose');
 
-
+// Use native promises
+//mongoose.Promise = global.Promise;
+var app;
 // Set up logging
 var logger = logging.createLogger({
   // log directory
@@ -24,7 +30,7 @@ var logger = logging.createLogger({
 
 
 function startFn(callback) {
-  var app = express();
+  app = express();
   var server = require('http').createServer(app);
 
 
@@ -39,7 +45,6 @@ function startFn(callback) {
   require('./routes')(app);
 
 
-  var mongoose = require('mongoose');
   mongoose.connect(config.mongo.uri, config.mongo.options);
 
   var conn = mongoose.connection;
@@ -49,9 +54,20 @@ function startFn(callback) {
     logger.info('mongodb connected');
     require('./components/redis').mongooseRedisCache(mongoose, logger);
     // Populate DB with sample data
-    if (config.seedDB && require('cluster').isMaster) {
+    if (config.seedDB) {
       logger.warn('Populate DB with sample data');
       require('./config/seed');
+
+      var redisClient = require('./components/redis').getRedisClient({label: 'Purge'});
+      logger.debug('Purge all keys ' + '*');
+      redisClient.keys('*', function (err, keys) {
+        if (keys && keys.length < 1) return false;
+
+        redisClient.del(keys, function (err, count) {
+          count = count || 0;
+          return count;
+        });
+      });
     }
   });
 
@@ -66,7 +82,7 @@ function run(cluster) {
 
     sticky(startFn, {
       concurrency: parseInt(process.env.WEB_CONCURRENCY, require('os').cpus().length),
-      port: parseInt(process.env.PORT, 9000),
+      port: config.port,
       debug: (NODE_ENV === 'development')
     });
 
@@ -81,4 +97,12 @@ function run(cluster) {
 }
 
 
+function getApp() {
+  if (!app)startFn(function (server) {
+  });
+  return app;
+}
+
+
+exports.getApp = getApp;
 exports.run = run;

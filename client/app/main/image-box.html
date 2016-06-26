@@ -1,28 +1,29 @@
 <div class="row">
-  <div class="col-md-3 col-sm-3 col-xs-6">
-    <canvas id="snapshot" width="100" height="100" ng-init="vm.loadSnapshot()">
+  <div class="col-md-3 col-sm-3 col-xs-6" class="canvas-overlay">
+    <canvas name="preview" width="100" height="100">
     </canvas>
-    <p class="help-block">Local <strong ng-bind="vm.pixelsReceived | number:0"></strong> Pixels</p>
-  </div>
-  <div class="col-md-3 col-sm-3 col-xs-6">
-    <canvas id="preview" width="100" height="100">
+    <canvas name="overlay" class="overlay" width="100" height="100">
     </canvas>
-    <p class="help-block">Received <strong ng-bind="vm.pixelsExternalProcessed | number:0"></strong> Pixels</p>
   </div>
   <form role="form" class="form-horizontal col-md-6 col-sm-6  col-xs-12">
     <div class="input-group">
-      <span class="input-group-addon" id="input-nodes">Nodes</span>
+      <span class="input-group-addon" name="input-nodes">Nodes</span>
       <input type="text" class="form-control" ng-readonly="true" ng-model="vm.totalNodes.length"
              aria-describedby="input-nodes"/>
     </div>
     <div class="input-group">
-      <span class="input-group-addon" id="input-workers">Web Workers</span>
+      <span class="input-group-addon" name="input-workers">Web Workers</span>
       <input type="text" class="form-control" ng-model="vm.maxWorkers" aria-describedby="input-workers"/>
     </div>
     <div>
-      <button type="button" id="toggleButton"
-              class="btn btn-success btn-block animate-hide" ng-click="vm.toggleNetwork()">Join
+      <button type="button" name="toggleButton"
+              class="btn btn-success btn-block animate-hide"
+              ng-class="vm.toggleButtonClass"
+              ng-click="vm.toggleNetwork()">{{vm.toggleButtonText}}
       </button>
+
+      <p class="help-block">Local <strong ng-bind="vm.pixelsReceived | number:0"></strong> Pixels</p>
+      <p class="help-block">Received <strong ng-bind="vm.pixelsExternalProcessed | number:0"></strong> Pixels</p>
     </div>
   </form>
 </div>
