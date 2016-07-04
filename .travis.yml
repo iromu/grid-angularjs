@@ -1,7 +1,6 @@
 language: node_js
 node_js:
-  - '4.0.0'
-before_install: sudo apt-get install libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential g++
+  - '4'
 before_script:
   - npm install -g bower grunt-cli
   - npm install -g istanbul
@@ -10,3 +9,11 @@ script: "npm run-script coverage"
 services:
   - mongodb
   - redis-server
+env:
+  - CXX=g++-4.8
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8 libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev
