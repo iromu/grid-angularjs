@@ -6,7 +6,12 @@
   var redisConf = require("redis-url").parse(config.redis.uri);
   var mongooseRedisCache = require("mongoose-redis-cache");
   var logger = require('../../logging').getLogger();
+  require('redis-streams')(redis);
 
+  var Promise = require('bluebird');
+
+  Promise.promisifyAll(redis.RedisClient.prototype);
+  Promise.promisifyAll(redis.Multi.prototype);
 
   module.exports.redisClient = undefined;
   module.exports.redisClientBufffers = undefined;

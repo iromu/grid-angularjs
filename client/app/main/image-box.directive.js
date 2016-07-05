@@ -229,8 +229,6 @@
     vm.init = function () {
       vm.toggleButtonText = 'Join';
       vm.loadPreview();
-      vm.randomSolve();
-
     };
   }
 }());

@@ -7,8 +7,8 @@ var fs = require('fs'),
   bunyan = require('bunyan');
 
 
-exports.getLogger = getLogger;
-exports.createLogger = createLogger;
+module.exports.getLogger = getLogger;
+module.exports.createLogger = createLogger;
 
 var logger = null;
 

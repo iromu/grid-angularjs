@@ -49,7 +49,7 @@ describe('User Model', function () {
 
   it('should fail when saving without an email', function (done) {
     user.email = '';
-    user.save(function (err) {
+    user.save().catch(function (err) {
       should.exist(err);
       done();
     });

@@ -4,31 +4,22 @@
   var fs = require('fs');
   var path = require('path');
   var _ = require('lodash');
-  var Canvas = require('canvas');
-  var Image = Canvas.Image;
   var Promise = require('bluebird');
 
   var redis = require('redis');
-  require('redis-streams')(redis);
-  var base64encode = require('base64-stream').Encode;
-  var base64decode = require('base64-stream').Decode;
-  var PassThrough = require('stream').PassThrough;
 
-  var redisClient = require('../../components/redis').getRedisClient({label: 'Pixel'});
   var logger = require('../../logging').getLogger();
-  var Pixel = require('./pixel.model.js');
-  var Lock = require('./pixel.lock.js');
+  var Pixel = require('./pixel.model');
+
+  var pixelRepository = require('./pixel.repository')(logger);
 
   var width = 100;
   var height = 100;
-  var length = width * height;
 
   var region_width = 10;
   var region_height = 10;
   var region_length = region_width * region_height;
 
-
-  var LENA_PNG = __dirname + '/lena.png';
   var options = {multi: true};
   var prevPixelIds = [];
   var lastX = -1;
@@ -74,127 +65,20 @@
     });
   };
 
-  var readFile = function (room, png) {
 
-    var lena = fs.readFileSync(png);
-    var img = new Image();
-    img.src = lena;
+  var retrievePNGStreamFor = function (cache_key, res, room, maxAge) {
 
-    var canvas = new Canvas(img.width, img.height);
-    var ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, img.width, img.height);
-
-    var pixels = [];
-
-    for (var x = 0; x < img.width; x++) {
-      for (var y = 0; y < img.height; y++) {
-        var d = ctx.getImageData(x, y, 1, 1);
-        pixels.push({x: x, y: y, r: d.data[0], g: d.data[1], b: d.data[2], image: png.split("/").pop(), room: room});
-      }
-    }
-
-    return pixels;
-  };
-
-
-  var reloadImageForRoom = function (room) {
-    return new Promise(function (resolve, reject) {
-      if (Lock.get(room).reloading === false) {
-        Lock.get(room).reloading = true;
-
-        logger.info('reloadImageForRoom ' + room);
-        Pixel.find({room: room}).remove(function () {
-          Pixel
-            .find({
-              room: 'raw',
-              image: 'lena.png'
-            })
-            .sort({x: +1, y: +1})
-            .lean()
-            .exec(function (err, pixels) {
-              if (err) {
-                Lock.get(room).reloading = false;
-                return reject(err);
-              }
-              var persist = function (_pixels) {
-                logger.info('Retrieving from file. ' + room);
-                Pixel.collection.insert(_.map(_pixels, function (pixel) {
-                  pixel.room = room;
-                  return pixel;
-                }), {multi: true}, function () {
-                  Lock.get(room).reloading = false;
-                  resolve(_pixels);
-                });
-              };
-
-              if (!Array.isArray(pixels) || pixels.length === 0) {
-                pixels = readFile('raw', LENA_PNG);
-                Pixel.collection.insert(pixels, {multi: true}, function () {
-                  logger.info('Retrieving from file. raw forced');
-                  persist(pixels);
-                });
-              }
-              else {
-
-                persist(pixels);
-              }
-            });
-        });
-      }
-    });
-  };
-
-  var retrievePNGStreamFor = function (cache_key, res, process, room, maxAge) {
-    return new Promise(function (resolve, reject) {
-      redisClient.exists(cache_key, function (err, exists) {
-        if (err) {
-          return reject(err);
-        }
-
-        if (exists) {
-          logger.info('Retrieving ' + cache_key + ' from cache.');
-          redisClient.readStream(cache_key)
-            .pipe(base64decode()).pipe(res);
-          return resolve();
-        } else {
-
-          Pixel.find({image: 'lena.png', room: room})
-            .sort({x: +1, y: +1})
-            .lean()
-            .exec(function (err, pixels) {
-
-              if (err) {
-                return reject(err);
-              }
-
-              var pipePixels = function (_pixels) {
-
-                var canvas = new Canvas(width, height);
-                var ctx = canvas.getContext('2d');
-
-                var id = ctx.createImageData(1, 1);
-                var d = id.data;
-                process(_pixels, d, ctx, id);
-                var stream = canvas.syncPNGStream();
-                var base64pass = new PassThrough();
-                stream.pipe(base64pass)
-                  .pipe(base64encode())
-                  .pipe(redisClient.writeStream(cache_key, maxAge));
-                stream.pipe(res);
-                resolve();
-              };
-
-              if (!Array.isArray(pixels) || pixels.length === 0) {
-                reloadImageForRoom(room).then(pipePixels);
-              }
-              else {
-                logger.info('Retrieving ' + cache_key + ' from database. ' + pixels.length);
-                pipePixels(pixels);
-              }
-            });
-        }
+    var validate = function (pixels, d, ctx, id) {
+      pixels.forEach(function (pixel) {
+        d[0] = pixel.r || 0;
+        d[1] = pixel.g || 0;
+        d[2] = pixel.b || 0;
+        d[3] = pixel.a || 255;
+        ctx.putImageData(id, pixel.x, pixel.y);
       });
-    });
+    };
+
+    return pixelRepository.retrieveAsStream(cache_key, room, maxAge, validate, res);
   };
 
   var calcWindowSlice = function (region, width, height, size) {
@@ -222,9 +106,12 @@
 
   exports.getPixels = function (room) {
     return new Promise(function (resolve, reject) {
-      if (Lock.get(room).updating === false) {
-        Lock.get(room).updating = true;
-        var index = Math.floor(Math.random() * 100 + 1);
+      if (true) {
+
+        var available = Lock.get(room).index.available;
+        var index = available.splice(_.random(available.length - 1), 1)[0];
+
+        logger.info('available ' + available.length + ' locked ' + Lock.get(room).index.locked.length);
         var selection = calcWindowSlice(index, width, height, 10);
         var iteration = (lastX === -1) ? false : (lastX + 1) % region_width;
         var selectX = (iteration === 0) ? 9 : lastX + 10;
@@ -242,7 +129,7 @@
           .lean()
           .exec(function (err, pixels) {
             if (!Array.isArray(pixels) || pixels.length === 0) {
-              Lock.get(room).updating = false;
+
               lastX = -1;
               lastY = 9;
               logger.info('reloadBuffer');
@@ -257,7 +144,7 @@
                   lastX = selectX;
                   lastY = selectY;
                   region++;
-                  Lock.get(room).updating = false;
+
                   resolve({
                     room: room,
                     selection: selection,
