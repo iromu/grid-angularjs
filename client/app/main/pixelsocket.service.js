@@ -31,7 +31,7 @@
         socket.socket.on('snapshot', function (data) {
           if (room === data.room) {
             $log.debug('snapshot');
-            cb(data.imageName);
+            cb(data.image);
           }
         });
       };

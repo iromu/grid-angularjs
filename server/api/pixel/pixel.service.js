@@ -1,68 +1,30 @@
 (function () {
   'use strict';
 
-  var fs = require('fs');
-  var path = require('path');
-  var _ = require('lodash');
-  var Promise = require('bluebird');
-
-  var redis = require('redis');
-
-  var logger = require('../../logging').getLogger();
-  var Pixel = require('./pixel.model');
-
-  var pixelRepository = require('./pixel.repository')(logger);
-
   var width = 100;
   var height = 100;
 
-  var region_width = 10;
-  var region_height = 10;
-  var region_length = region_width * region_height;
+  var _ = require('lodash');
 
-  var options = {multi: true};
-  var prevPixelIds = [];
-  var lastX = -1;
-  var lastY = 9;
-  var region = 0;
+  var Pixel = require('./pixel.model');
+
+  var logger = require('../../logging').getLogger();
+  var pixelRepository = require('./pixel.repository')(logger);
 
 
-  var getIdsFromPixels = function (pixels) {
-    return pixels.map(function (pixel) {
-      return pixel._id.toString();
-    });
-  };
+  var store = {};
 
-  var verifyPixels = function (pixels) {
-    var pixelIds = getIdsFromPixels(pixels);
-    if (prevPixelIds.length === 0) {
-      prevPixelIds = pixelIds;
-      return true;
-    } else {
-      var diff = _.difference(pixelIds, prevPixelIds);
-      if (_.isEqual(diff, prevPixelIds)) {
-        logger.warn('Duplicated ' + diff);
-        logger.warn('prevPixelIds ' + prevPixelIds);
-        logger.warn('pixelIds ' + pixelIds);
-        return false;
+  var Lock = {
+    get: function (lock) {
+      if (!store.hasOwnProperty(lock)) {
+        store[lock] = {
+          updating: false,
+          reloading: false,
+          index: {locked: [], available: Array.apply(null, {length: 100}).map(Number.call, Number)}
+        };
       }
-      prevPixelIds = prevPixelIds.concat(pixelIds);
-      return true;
+      return store[lock];
     }
-  };
-
-  var lockPixels = function (pixels, callback) {
-    var ids = getIdsFromPixels(pixels);
-    Pixel.collection.update({_id: {$in: ids}}, {$set: {locked: true}}, options, function (err, numAffected, raw) {
-      if (numAffected === 0) {
-        logger.warn('The number of updated documents was %d', numAffected);
-        logger.warn('The raw response from Mongo was ', raw);
-      }
-      if (err) {
-        logger.error('UPDATE ERROR %s', JSON.stringify(err, null, 2));
-      }
-      callback();
-    });
   };
 
 
@@ -105,66 +67,15 @@
   exports.retrievePNGStreamFor = retrievePNGStreamFor;
 
   exports.getPixels = function (room) {
-    return new Promise(function (resolve, reject) {
-      if (true) {
 
-        var available = Lock.get(room).index.available;
-        var index = available.splice(_.random(available.length - 1), 1)[0];
-
-        logger.info('available ' + available.length + ' locked ' + Lock.get(room).index.locked.length);
-        var selection = calcWindowSlice(index, width, height, 10);
-        var iteration = (lastX === -1) ? false : (lastX + 1) % region_width;
-        var selectX = (iteration === 0) ? 9 : lastX + 10;
-        var selectY = (iteration === 0) ? lastY + 10 : lastY;
-
-        Pixel
-          .find({
-            room: room,
-            image: 'lena.png',
-            x: {'$lte': selection.x + region_width - 1, '$gte': selection.x},
-            y: {'$lte': selection.y + region_height - 1, '$gte': selection.y}
-          })
-          .sort({x: +1, y: +1})
-          .limit(region_length)
-          .lean()
-          .exec(function (err, pixels) {
-            if (!Array.isArray(pixels) || pixels.length === 0) {
-
-              lastX = -1;
-              lastY = 9;
-              logger.info('reloadBuffer');
-              reloadImageForRoom(room).then(reject);
-            } else {
-              if (verifyPixels(pixels)) {
-
-                logger.info('getPixels() locking selectX: %s selectY: %s', selectX, selectY);
-                lockPixels(pixels, function () {
-
-                  logger.info('getPixels() post lockPixels selectX: %s selectY: %s', selectX, selectY);
-                  lastX = selectX;
-                  lastY = selectY;
-                  region++;
-
-                  resolve({
-                    room: room,
-                    selection: selection,
-                    pixels: pixels
-                  })
-                  ;
-                });
-              } else {
-                Lock.get(room).updating = false;
-                logger.warn('duplicated');
-                resolve();
-              }
-            }
-          });
-
-      } else {
-        logger.info('locked');
-        resolve();
-      }
-    });
+    if (_.isEmpty(Lock.get(room).index.available)) {
+      Lock.get(room).index.available = Array.apply(null, {length: 100}).map(Number.call, Number);
+      return pixelRepository.reloadImageForRoom(room);
+    } else {
+      var index = Lock.get(room).index.available.splice(_.random(Lock.get(room).index.available.length - 1), 1)[0];
+      var selection = calcWindowSlice(index, width, height, 10);
+      return pixelRepository.getPixels(room, selection);
+    }
   };
 
 

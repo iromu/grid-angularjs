@@ -180,6 +180,8 @@
     });
 
     vm.loadPreview = function () {
+
+      $log.warn('loadPreview before loading preview room: ' + vm.room);
       vm.stopRequestingBuffer = true;
 
       vm.pixelsReceived = 0;

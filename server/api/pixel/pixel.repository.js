@@ -1,17 +1,18 @@
 (function () {
   'use strict';
 
-
-  var Canvas = require('canvas');
-  var fs = require('fs');
-
   var width = 100;
   var height = 100;
   var LENA_PNG = __dirname + '/lena.png';
 
+  var Canvas = require('canvas');
+  var fs = require('fs');
+  var _ = require('lodash');
+
   var base64encode = require('base64-stream').Encode;
   var base64decode = require('base64-stream').Decode;
   var PassThrough = require('stream').PassThrough;
+
 
   var Pixel = require('./pixel.model');
   var redisClient = require('../../components/redis').getRedisClient({label: 'Pixel'});
@@ -51,7 +52,6 @@
   var reloadImageForRoom = function (room) {
     return new Promise(function (resolve, reject) {
 
-
       logger.info('reloadImageForRoom ' + room);
       Pixel.find({room: room}).remove(function () {
         Pixel
@@ -63,31 +63,76 @@
           .lean()
           .exec(function (err, pixels) {
             if (err) {
-              return reject(err);
-            }
-            var persist = function (_pixels) {
-              logger.info('Retrieving from file. ' + room);
-              Pixel.collection.insert(_.map(_pixels, function (pixel) {
-                pixel.room = room;
-                return pixel;
-              }), {multi: true}, function () {
-                resolve(_pixels);
-              });
-            };
+              reject(err);
+            } else {
+              var persist = function (_pixels) {
+                logger.info('Retrieving from file. ' + room);
+                Pixel.collection.insert(_.map(_pixels, function (pixel) {
+                  pixel.room = room;
+                  return pixel;
+                }), {multi: true}, function () {
+                  resolve({
+                    room: room,
+                    image: 'lena.png',
+                    reload: {pixels: _pixels}
+                  });
+                });
+              };
 
-            if (!Array.isArray(pixels) || pixels.length === 0) {
-              pixels = readFile('raw', LENA_PNG);
-              Pixel.collection.insert(pixels, {multi: true}, function () {
-                logger.info('Retrieving from file. raw forced');
+              if (!Array.isArray(pixels) || pixels.length === 0) {
+                pixels = readFile('raw', LENA_PNG);
+                Pixel.collection.insert(pixels, {multi: true}, function () {
+                  logger.info('Retrieving from file. raw forced');
+                  persist(pixels);
+                });
+              }
+              else {
                 persist(pixels);
-              });
-            }
-            else {
-              persist(pixels);
+              }
             }
           });
       });
 
+    });
+  };
+
+  var getPixels = function (room, selection) {
+    return new Promise(function (resolve, reject) {
+      if (true) {
+
+        Pixel
+          .find({
+            room: room,
+            image: 'lena.png',
+            x: {'$lte': selection.x + selection.size - 1, '$gte': selection.x},
+            y: {'$lte': selection.y + selection.size - 1, '$gte': selection.y}
+          })
+          .sort({x: +1, y: +1})
+          .limit(selection.width)
+          .lean()
+          .exec()
+          .then(function (pixels) {
+            if (!Array.isArray(pixels) || pixels.length === 0) {
+              logger.error('reloadBuffer selection: ', JSON.stringify(selection, null, 2));
+              reject('reloadBuffer');
+            } else {
+              resolve({
+                room: room,
+                image: 'lena.png',
+                selection: selection,
+                pixels: pixels
+              });
+            }
+          })
+          .catch(function (err) {
+            logger.debug('Error reading pixels from persistence. %s', err);
+            reject(err);
+          });
+
+      } else {
+        logger.info('locked');
+        resolve('locked');
+      }
     });
   };
 
@@ -115,12 +160,16 @@
                 .lean()
                 .exec(function (err, pixels) {
 
+
                   if (err) {
                     reject(err);
                   }
                   else {
-                    var pipePixels = function (_pixels) {
+                    var extractPixels = function (data) {
+                      return (Array.isArray(data)) ? data : data.reload.pixels;
+                    };
 
+                    var pipePixels = function (_pixels) {
                       var canvas = new Canvas(width, height);
                       var ctx = canvas.getContext('2d');
 
@@ -141,7 +190,7 @@
                     };
 
                     if (!Array.isArray(pixels) || pixels.length === 0) {
-                      reloadImageForRoom(room).then(pipePixels);
+                      reloadImageForRoom(room).then(extractPixels).then(pipePixels);
                     }
                     else {
                       logger.info('Retrieving ' + cache_key + ' from database. ' + pixels.length);
@@ -155,7 +204,9 @@
       },
       setLogger: function setLogger(logger_) {
         logger = logger_;
-      }
+      },
+      getPixels: getPixels,
+      reloadImageForRoom: reloadImageForRoom
     };
   }
 
