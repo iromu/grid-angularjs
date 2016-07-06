@@ -5,6 +5,7 @@
 //add timestamps in front of log messages
 require('console-stamp')(console, 'UTC:yyyy-mm-dd\'T\'HH:MM:ss.l\'Z\'');
 
+
 var config = require('./config/environment');
 var sticky = require('sticky-cluster');
 var logging = require('./logging');
@@ -12,12 +13,12 @@ var async = require('async');
 var express = require('express');
 
 var config = require('./config/environment');
+
 // if process.env.NODE_ENV has not been set, default to development
 var NODE_ENV = process.env.NODE_ENV || 'development';
 var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
 
-// Use native promises
-//mongoose.Promise = global.Promise;
 var app;
 // Set up logging
 var logger = logging.createLogger({
@@ -53,11 +54,17 @@ function startFn(callback) {
   conn.once('open', function () {
     logger.info('mongodb connected');
     require('./components/redis').mongooseRedisCache(mongoose, logger);
-    // Populate DB with sample data
+
+    // Populate DB with sample data always
     if (config.seedDB) {
       logger.warn('Populate DB with sample data');
-      require('./config/seed');
 
+      require('./config/seed').init().then(
+        function () {
+          logger.warn('Done populating DB with sample data');
+          callback(server);
+        }
+      );
       var redisClient = require('./components/redis').getRedisClient({label: 'Purge'});
       logger.debug('Purge all keys ' + '*');
       redisClient.keys('*', function (err, keys) {
@@ -68,10 +75,13 @@ function startFn(callback) {
           return count;
         });
       });
+
+    }
+    else {
+      callback(server);
     }
   });
 
-  callback(server);
 }
 
 function run(cluster) {

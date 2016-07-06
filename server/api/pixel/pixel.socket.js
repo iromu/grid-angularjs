@@ -23,17 +23,21 @@
       var room = _room;
       logger.debug('[%s] pixel:buffer:request room %s', socket.id, room);
 
-      service.getPixels(room).then(function (data) {
-
-        logger.debug('[%s] pixel:buffer:response %s', data.room, JSON.stringify(_.size(data.pixels), null, 2));
-        socket.emit('pixel:buffer:response', data);
-
-      }, function (imageName) {
-
-        logger.debug('to [%s] snapshot %s', room, JSON.stringify(imageName, null, 2));
-        socket.to(room).emit('snapshot', {imageName: imageName, room: room});
-
-      });
+      service.getPixels(room)
+        .then(function (data) {
+          if (data.hasOwnProperty('reload')) {
+            logger.debug('to [%s] pixel:buffer:reload %s', room, JSON.stringify(data.image, null, 2));
+            io.to(room).emit('pixel:buffer:reload', {image: data.image, room: room});
+          }
+          if (data.hasOwnProperty('pixels')) {
+            logger.debug('[%s] pixel:buffer:response %s', data.room, JSON.stringify(_.size(data.pixels), null, 2));
+            socket.emit('pixel:buffer:response', data);
+          }
+        })
+        .catch(function (error) {
+          logger.debug('ERROR to [%s] pixel:buffer:reload %s', room, JSON.stringify(error, null, 2));
+          io.to(room).emit('pixel:buffer:reload', {room: room});
+        });
 
     });
 
