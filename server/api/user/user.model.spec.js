@@ -1,7 +1,8 @@
 'use strict';
 
 var should = require('should');
-var app = require('../../app');
+var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
 var User = require('./user.model');
 
 var user = new User({
@@ -33,17 +34,26 @@ describe('User Model', function () {
   });
 
   it('should fail when saving a duplicate user', function (done) {
-    user.save(function (err, doc, num) {
+    user.save().then(function (doc) {
+
       should.exist(doc);
       should.equal(doc.email, user.email);
-      should.equal(num, 1);
+
       var userDup = new User(user);
       should.equal(userDup.email, user.email);
-      userDup.save(function (err, doc, num) {
-        should.equal(num, 1);
-        should.exist(doc);
+
+      userDup.save().then(function (doc) {
+        should.not.exist(doc);
+        done();
+
+      }).catch(function (err) {
+        should.exist(err);
         done();
       });
+
+    }).catch(function (err) {
+      should.not.exist(err);
+      done();
     });
   });
 

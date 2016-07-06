@@ -1,7 +1,7 @@
 'use strict';
 
-//load common js config
-var app = require('../app');
+var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
 
 var should = require('should');
 var seed = require('./seed');
