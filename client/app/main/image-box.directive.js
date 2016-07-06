@@ -33,7 +33,6 @@
   function ImageBoxController($scope, $log, $http, $timeout, pixelSocketService, canvasViewService) {
     var vm = this;
 
-    //vm.pixelBuffer = [];
     vm.pixelsReceived = 0;
     vm.maxWorkers = 2;
     vm.pixelsExternalProcessed = 0;
@@ -82,19 +81,6 @@
             return pixel;
           }));
 
-          var selection = {
-            size: 100,
-            width: 10,
-            height: 10,
-            x: _.min(pixels, function (o) {
-              return o.x;
-            }),
-            y: _.min(pixels, function (o) {
-              return o.y;
-            })
-          };
-
-
         };
 
         vm.pixelsReceived += pixels.length;
@@ -106,12 +92,12 @@
 
       pixelSocketService.bindArray(vm.totalNodes);
 
-      pixelSocketService.onSnapshot(function (imageName) {
-        vm.imageName = imageName;
+      pixelSocketService.onPixelBufferReload(vm.room, function (data) {
+        vm.imageName = data.image;
         vm.loadPreview();
       });
 
-      pixelSocketService.onPixelBatchUpdate(function (data) {
+      pixelSocketService.onPixelBatchUpdate(vm.room, function (data) {
         var pixels = data.pixels;
         if (Array.isArray(pixels) && pixels.length > 0) {
           vm.pixelsExternalProcessed += pixels.length;
@@ -130,12 +116,12 @@
           process(pixels);
         } else {
           $log.warn('onPixelBufferResponse() empty array received for processing.');
-          setTimeout(vm.loadPixelBuffer, 1000);
+          $timeout(vm.loadPixelBuffer, 1000);
         }
       });
 
       pixelSocketService.onPutPixelsEnd(vm.room, function (data) {
-        vm.loadPixelBuffer();
+        $timeout(vm.loadPixelBuffer, 1000);
       });
 
       pixelSocketService.onJoinNetwork(vm.room, function (room) {
@@ -147,9 +133,7 @@
     };
 
     vm.joinNetwork = function () {
-      if (vm.stopRequestingBuffer === false) {
         pixelSocketService.joinNetwork(vm.room);
-      }
     };
     vm.leaveNetwork = function () {
       if (vm.stopRequestingBuffer === false) {
@@ -199,7 +183,9 @@
         if (vm.joined === true) {
           $log.warn('loadPixelBuffer after loading snapshot');
           vm.stopRequestingBuffer = false;
-          $timeout(vm.loadPixelBuffer, 2000);
+          $timeout(vm.loadPixelBuffer, 1000);
+        } else {
+          vm.joinNetwork();
         }
 
       });

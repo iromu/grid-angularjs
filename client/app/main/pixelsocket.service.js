@@ -17,7 +17,7 @@
           });
         });
         socket.socket.on('socket:disconnect', function (id) {
-          //$log.warn('Disconnected ' + id);
+          $log.warn('Disconnected ' + id);
           _.remove(array, function (current) {
             return id === current;
           });
@@ -26,12 +26,12 @@
         socket.socket.emit('socket:info');
       };
 
-      pixelSocketService.onSnapshot = function (room, cb) {
+      pixelSocketService.onPixelBufferReload = function (room, cb) {
         cb = cb || angular.noop;
-        socket.socket.on('snapshot', function (data) {
+        socket.socket.on('pixel:buffer:reload', function (data) {
           if (room === data.room) {
-            $log.debug('snapshot');
-            cb(data.image);
+            $log.debug('pixel:buffer:reload');
+            cb(data);
           }
         });
       };
@@ -40,7 +40,7 @@
         cb = cb || angular.noop;
         socket.socket.on('pixel:batch:update', function (data) {
           if (room === data.room) {
-            cb(data.pixels);
+            cb(data);
           }
         });
       };
@@ -49,7 +49,6 @@
         cb = cb || angular.noop;
         socket.socket.on('pixel:buffer:response', function (data) {
             if (room === data.room) {
-              $log.debug('<pixel:buffer:response ' + room);
               cb(data);
             }
           }
@@ -57,7 +56,6 @@
       };
 
       pixelSocketService.putPixels = function (data) {
-        $log.debug('>pixel:put room: ' + data.room);
         socket.socket.emit('pixel:put', data);
       };
 
@@ -65,18 +63,16 @@
         cb = cb || angular.noop;
         socket.socket.on('pixel:put:end', function (data) {
           if (room === data.room) {
-            $log.debug('<pixel:put:end ' + room);
             cb(room);
           }
         });
       };
       pixelSocketService.requestPixelBuffer = function (room) {
-        $log.debug('>pixel:buffer:request ' + room);
         socket.socket.emit('pixel:buffer:request', room);
       };
 
       pixelSocketService.unsync = function () {
-        socket.socket.removeAllListeners('snapshot');
+        socket.socket.removeAllListeners('pixel:buffer:reload');
         socket.socket.removeAllListeners('pixel:batch:update');
         socket.socket.removeAllListeners('room:joined');
         socket.socket.removeAllListeners('pixel:put:end');

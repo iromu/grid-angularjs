@@ -61,35 +61,73 @@
           })
           .sort({x: +1, y: +1})
           .lean()
-          .exec(function (err, pixels) {
-            if (err) {
-              reject(err);
-            } else {
-              var persist = function (_pixels) {
-                logger.info('Retrieving from file. ' + room);
-                Pixel.collection.insert(_.map(_pixels, function (pixel) {
-                  pixel.room = room;
-                  return pixel;
-                }), {multi: true}, function () {
-                  resolve({
-                    room: room,
-                    image: 'lena.png',
-                    reload: {pixels: _pixels}
+          .exec()
+          .then(function (rawPixels) {
+
+            var persist = function (newPixels) {
+              logger.debug('(reloadImageForRoom) Persist starts ' + room);
+
+              newPixels = _.map(newPixels, function (pixel) {
+                delete pixel._id;
+                delete pixel.id;
+                pixel.room = room;
+                return pixel;
+              });
+
+              var insertPixels = function () {
+                return Pixel.collection
+                  .insert(newPixels, {multi: true})
+                  .then(function (data) {
+                    logger.info('(reloadImageForRoom) Resolving from file. ' + room);
+                    resolve({
+                      room: room,
+                      image: 'lena.png',
+                      reload: {pixels: data}
+                    });
+                  })
+                  .catch(function (error) {
+                    logger.error('(reloadImageForRoom) Error inserting pixels for room %s. \n%s', room, error);
+                    reject(error);
                   });
-                });
               };
 
-              if (!Array.isArray(pixels) || pixels.length === 0) {
-                pixels = readFile('raw', LENA_PNG);
-                Pixel.collection.insert(pixels, {multi: true}, function () {
-                  logger.info('Retrieving from file. raw forced');
-                  persist(pixels);
+              return Pixel
+                .find({
+                  room: room,
+                  image: 'lena.png'
+                })
+                .remove()
+                .lean()
+                .exec()
+                .then(insertPixels)
+                .catch(function (error) {
+                  logger.error('(reloadImageForRoom) Error removing pixels before inserting for room %s. \n%s', room, error);
+                  reject(error);
                 });
-              }
-              else {
-                persist(pixels);
-              }
+
+            };
+
+            if (!Array.isArray(rawPixels) || rawPixels.length === 0) {
+              rawPixels = readFile('raw', LENA_PNG);
+              Pixel.collection
+                .insert(rawPixels, {multi: true})
+                .then(function () {
+                  logger.info('Retrieving from file. raw forced');
+                  return persist(rawPixels);
+                })
+                .catch(function (error) {
+                  logger.error('(reloadImageForRoom) Error inserting pixels for raw image. \n%s', error);
+                  reject(error);
+                });
             }
+            else {
+              return persist(rawPixels);
+            }
+
+          })
+          .catch(function (error) {
+            logger.error('(reloadImageForRoom) Error reading raw pixels. \n%s', error);
+            reject(error);
           });
       });
 
@@ -125,7 +163,7 @@
             }
           })
           .catch(function (err) {
-            logger.debug('Error reading pixels from persistence. %s', err);
+            logger.debug('Error reading pixels for getPixels. %s', err);
             reject(err);
           });
 

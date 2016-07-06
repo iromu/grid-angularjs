@@ -13,12 +13,12 @@ var async = require('async');
 var express = require('express');
 
 var config = require('./config/environment');
+
 // if process.env.NODE_ENV has not been set, default to development
 var NODE_ENV = process.env.NODE_ENV || 'development';
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
-// Use native promises
-//mongoose.Promise = global.Promise;
+
 var app;
 // Set up logging
 var logger = logging.createLogger({

@@ -1,5 +1,8 @@
 'use strict';
 
+//load common js config
+var app = require('../app');
+
 var should = require('should');
 var seed = require('./seed');
 var User = require('../api/user/user.model');
@@ -16,16 +19,21 @@ describe('After seeding', function () {
 
 
   it('should have 2 users', function (done) {
-    User.find({}, function (err, users) {
+    var query = User.find({});
+    query.exec().constructor.should.equal(require('bluebird'));
+    query.then(function (users) {
       users.should.have.length(2);
       done();
-    });
+    })
   });
 
 
   it('should have full pixel population', function (done) {
-    Pixel.find({}, function (err, pixels) {
-      pixels.should.have.length(60000);
+    Pixel.find({
+      room: 'raw',
+      image: 'lena.png'
+    }, function (err, pixels) {
+      pixels.should.have.length(10000);
       done();
     });
   });
