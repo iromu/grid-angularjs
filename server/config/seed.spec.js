@@ -9,7 +9,7 @@ var User = require('../api/user/user.model');
 var Pixel = require('../api/pixel/pixel.model');
 
 describe('After seeding', function () {
-  this.timeout(5000);
+  this.timeout(50000);
 
   before(function (done) {
     seed.init().then(function () {
