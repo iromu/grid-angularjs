@@ -15,9 +15,10 @@
       templateUrl: 'app/main/image-box.html',
       restrict: 'EA',
       scope: {
-        room: '='
+        room: '=',
+        description: '='
       },
-      replace: true,
+      replace: false,
       link: linkFunc,
       controller: ImageBoxController,
       controllerAs: 'vm',
@@ -84,7 +85,19 @@
         };
 
         vm.pixelsReceived += pixels.length;
-        onWorkDone(_.map(pixels, job));
+        if (vm.room === 'reduce') {
+          onWorkDone(pixels.reduce(function (a, b) {
+            return {
+              x: a.x,
+              y: a.y,
+              r: a.r + b.r,
+              g: a.g + a.g,
+              b: a.b + a.b
+            };
+          }));
+        } else {
+          onWorkDone(_.map(pixels, job));
+        }
       }
     };
 
@@ -100,10 +113,12 @@
       pixelSocketService.onPixelBatchUpdate(vm.room, function (data) {
         var pixels = data.pixels;
         if (Array.isArray(pixels) && pixels.length > 0) {
+          if (data.selection)canvasViewService.drawSelection(vm.overlay, data.selection, '#AAFFCC', true);
           vm.pixelsExternalProcessed += pixels.length;
           vm.pixelsExternalProcessedPercent = vm.pixelsExternalProcessed / 100;
           //canvasViewService.drawSelection(vm.overlay, data.selection, 'cyan');
           canvasViewService.pixelBatchUpdate(vm.preview, pixels);
+
         } else {
           $log.warn('onPixelBatchUpdate() empty array received.');
         }
@@ -112,16 +127,16 @@
       pixelSocketService.onPixelBufferResponse(vm.room, function (data) {
         var pixels = data.pixels;
         if (Array.isArray(pixels) && pixels.length > 0) {
-          canvasViewService.drawSelection(vm.overlay, data.selection, '#CCFFCC');
+          if (data.selection)canvasViewService.drawSelection(vm.overlay, data.selection, '#CCFFCC', true);
           process(pixels);
         } else {
           $log.warn('onPixelBufferResponse() empty array received for processing.');
-          $timeout(vm.loadPixelBuffer, 1000);
+          $timeout(vm.loadPixelBuffer, 100);
         }
       });
 
       pixelSocketService.onPutPixelsEnd(vm.room, function (data) {
-        $timeout(vm.loadPixelBuffer, 1000);
+        $timeout(vm.loadPixelBuffer, 100);
       });
 
       pixelSocketService.onJoinNetwork(vm.room, function (room) {
@@ -133,7 +148,7 @@
     };
 
     vm.joinNetwork = function () {
-        pixelSocketService.joinNetwork(vm.room);
+      pixelSocketService.joinNetwork(vm.room);
     };
     vm.leaveNetwork = function () {
       if (vm.stopRequestingBuffer === false) {

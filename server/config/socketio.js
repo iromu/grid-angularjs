@@ -90,6 +90,10 @@ module.exports = function (socketio, l) {
 
     socket.connectedAt = new Date();
 
+    socket.on('error', function (error) {
+      logger.error('Socket Error\n%s', error);
+    });
+
     socket.on('room:join', function (roomName) {
       joinRoom(socket, roomName);
     });

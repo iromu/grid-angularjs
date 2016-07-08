@@ -1,49 +1,3 @@
-.thing-form {
-  margin: 20px 0;
-}
-
-#banner {
-  border-bottom: none;
-  margin-top: -20px;
-  h1 {
-    font-size: 60px;
-    line-height: 1;
-    letter-spacing: -1px;
-  }
-}
-
-.hero-unit {
-  position: relative;
-  padding: 30px 15px;
-  color: #F5F5F5;
-  text-align: center;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
-  background: #4393B9;
-}
-
-.footer {
-  text-align: center;
-  padding: 30px 0;
-  margin-top: 70px;
-  border-top: 1px solid #E5E5E5;
-}
-
-div.desc {
-  background-color: #000;
-  color: #fff;
-  left: 0;
-  opacity: 0.5;
-  width: 100%;
-}
-
-.form-horizontal {
-  .input-group {
-    padding: 2px;
-  }
-  .input-group-addon {
-    min-width: 120px;
-  }
-}
 
 canvas {
   min-width: 100px;
@@ -55,13 +9,56 @@ canvas {
 
 }
 
-.canvas-overlay {
-  min-width: 100px;
-  min-height: 100px;
+.album {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  background-color: #f7f7f7;
 }
 
-.row div {
-  padding-bottom: 10%;
+.card {
+  float: left;
+  width: 33.333%;
+  padding: .75rem;
+  margin-bottom: 2rem;
+  border: 0;
+  max-width: 295px;
+  .canvas-overlay {
+    canvas {
+      width: 100%;
+      max-width: 280px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    height: 280px;
+    width: 100%;
+    display: block;
+    position: relative;
+    background-color: #9acfea;
+  }
+  img {
+    margin-bottom: .75rem;
+  }
+  .card-text {
+    font-size: 85%;
+    position: relative;
+  }
 }
 
+.jumbotron {
+  background-color: #ffffff;
+  margin-bottom: 0;
+  padding-bottom: 6rem;
+  padding-top: 6rem;
+  p {
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
 
+.jumbotron-heading {
+  font-weight: 300;
+}

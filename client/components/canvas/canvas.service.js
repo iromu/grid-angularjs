@@ -4,6 +4,15 @@
 angular.module('gridApp')
   .factory('canvasViewService', function ($timeout) {
 
+
+    var sharpContext = function (ctx) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.mozImageSmoothingEnabled = false;
+      ctx.webkitImageSmoothingEnabled = false;
+      ctx.msImageSmoothingEnabled = false;
+      return ctx;
+    };
+
     var calcWindowSlice = function (region, width, height, size) {
       var maxRegionW = Math.floor(width / size);
       var maxRegionH = Math.floor(height / size);
@@ -35,9 +44,14 @@ angular.module('gridApp')
       imageData.data[index + 3] = a;
     };
 
-    var pixelBatchUpdate = function (id, pixels) {
+    var getContext = function (id) {
       var element = getCanvas(id);
-      var c = element.getContext('2d');
+      var c = sharpContext(element.getContext('2d'));
+      return c;
+    };
+
+    var pixelBatchUpdate = function (id, pixels) {
+      var c = getContext(id);
       var imageData = c.createImageData(1, 1);
 
       pixels.forEach(function (item) {
@@ -51,23 +65,23 @@ angular.module('gridApp')
     };
 
     var clearImage = function (id) {
-      var canvas = getCanvas(id);
-      var c = canvas.getContext('2d');
-      c.clearRect(0, 0, canvas.width, canvas.height);
+      var element = getCanvas(id);
+      var c = sharpContext(element.getContext('2d'));
+      c.clearRect(0, 0, element.width, element.height);
     };
 
     var loadImage = function (id, url, cb) {
       cb = cb || angular.noop;
-      var canvas = getCanvas(id);
-      var c = canvas.getContext('2d');
+      var element = getCanvas(id);
+      var c = sharpContext(element.getContext('2d'));
 
-      c.clearRect(0, 0, canvas.width, canvas.height);
+      c.clearRect(0, 0, element.width, element.height);
       c.fillText('Loading...', 20, 50);
 
       var drawing = new Image();
       drawing.src = url;
       drawing.onload = function () {
-        c.clearRect(0, 0, canvas.width, canvas.height);
+        c.clearRect(0, 0, element.width, element.height);
         c.drawImage(drawing, 0, 0);
         cb();
       };
@@ -92,14 +106,13 @@ angular.module('gridApp')
     };
 
     var setImageData = function (id, imageData) {
-      var element = getCanvas(id);
-      var c = element.getContext('2d');
+      var c = getContext(id);
       return c.putImageData(imageData, 0, 0);
     };
 
     var drawSelection = function (id, selection, style, redraw) {
       var element = getCanvas(id);
-      var c = element.getContext('2d');
+      var c = sharpContext(element.getContext('2d'));
       if (redraw) c.clearRect(0, 0, element.width, element.height);
       c.beginPath();
       c.rect(selection.x, selection.y, selection.size, selection.size);

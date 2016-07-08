@@ -22,8 +22,18 @@
 [heroku-url]: https://grid-angularjs.herokuapp.com
 
 
+
+# Distributed Computing Grid
+
+      
+
 ## Running
 
+Server sends to each socket.io websocket client a region of the
+image for processing. Then the result is stored and shared within the network.<br>
+For supporting high concurrency, the backend distributes events between redis instances,
+ handled by socket.io-redis. Nodes can be added anytime, at any layer.
+      
 ### Prepare enviroment
   
 #### OSX

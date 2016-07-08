@@ -2,13 +2,7 @@
 
 angular.module('gridApp')
   .controller('NavbarCtrl', function ($scope, $location, Auth) {
-    $scope.menu = [{
-      'title': 'Image processing',
-      'link': '/'
-    }, {
-      'title': 'Text recognition',
-      'link': '/ml/nn'
-    }];
+    $scope.menu = [];
 
     $scope.isCollapsed = true;
     $scope.isLoggedIn = Auth.isLoggedIn;

@@ -1,16 +1,28 @@
 <div ng-include="'components/navbar/navbar.html'"></div>
-
-<div class="container">
-  <div class="well hidden-xs">
+<section class="jumbotron text-xs-center">
+  <div class="container">
+    <h1 class="jumbotron-heading">Distributed Computing Grid</h1>
+    <p class="lead text-muted">Server sends to each <a href="http://socket.io">socket.io websocket</a> client a region
+      of the
+      image for processing. Then the result is stored and shared within the network.<br>
+      For supporting high concurrency, the backend distributes events between <a
+        href="http://redis.io">redis</a> instances, handled by <a
+        href="https://github.com/socketio/socket.io-redis">socket.io-redis</a> . Nodes can be added
+      anytime, at any layer.</p>
     <p>
-      Server sends to each browser a region of the image. Each client process the region to greyscale and returns a
-      pixel array.
+      <a href="#" class="btn btn-primary">Start all !</a>
     </p>
   </div>
+</section>
+<div class="album text-muted">
+  <div class="container">
 
-  <image-box room="'grey'"></image-box>
+    <div class="row">
+      <image-box room="'grey'" description="'Color to grayscale'"></image-box>
+      <image-box room="'invert'" description="'Color invert.'"></image-box>
+      <image-box room="'reduce'" description="'Reduce color.'"></image-box>
+    </div>
+  </div>
 
-  <image-box room="'invert'"></image-box>
-
-
+</div>
 </div>

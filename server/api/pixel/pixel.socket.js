@@ -8,6 +8,7 @@
   var _ = require('lodash');
   var service = require('./pixel.service.js');
 
+
   exports.onConnectCallback = null;
 
   exports.register = function (s, sio, l) {
@@ -35,7 +36,7 @@
           }
         })
         .catch(function (error) {
-          logger.debug('ERROR to [%s] pixel:buffer:reload %s', room, JSON.stringify(error, null, 2));
+          logger.error('ERROR to [%s] pixel:buffer:reload %s', room, JSON.stringify(error, null, 2));
           io.to(room).emit('pixel:buffer:reload', {room: room});
         });
 
@@ -45,14 +46,23 @@
       var room = request.room;
       logger.debug('[%s] pixel:put %s', socket.id, JSON.stringify(_.size(request.pixels), null, 2));
 
-      service.savePixels(request.pixels, function () {
 
+      var broadcast = function () {
         var pixelSize = _.size(request.pixels);
         logger.debug('[%s] pixel:batch:update %s', room, JSON.stringify(pixelSize, null, 2));
         socket.to(room).emit('pixel:batch:update', {room: request.room, pixels: request.pixels});
         socket.emit('pixel:put:end', {pixelSize: pixelSize, room: request.room});
+      };
 
-      });
+      if (request.pixels) {
+        service
+          .bulkUpdate(request.pixels)
+          .then(broadcast)
+          .catch(function (error) {
+            logger.error('Socket Error\n%s', error);
+          });
+      }
+
     });
 
   };
