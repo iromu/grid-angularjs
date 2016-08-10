@@ -79,8 +79,7 @@
   };
 
 
-  exports.savePixels = function (pixels, cb) {
-
+  exports.savePixels = function (pixels) {
     pixels.forEach(function (item) {
       var update = {
         r: item.r || item.s,
@@ -90,14 +89,32 @@
         processed: true,
         locked: false
       };
+      return Pixel.collection.update({_id: item._id}, {$set: update});
+    });
+  };
 
-
-      Pixel.collection.update({_id: item._id}, {$set: update}, function (err) {
-        if (err) {
-          logger.error('UPDATE ERROR %s', JSON.stringify(err, null, 2));
-        }
+  exports.bulkUpdate = function (records, match) {
+    match = match || '_id';
+    return new Promise(function (resolve, reject) {
+      var bulk = Pixel.collection.initializeUnorderedBulkOp();
+      records.forEach(function (item) {
+        var update = {
+          r: item.r || item.s,
+          g: item.g || item.s,
+          b: item.b || item.s,
+          s: item.s,
+          processed: true,
+          locked: false
+        };
+        var query = {};
+        query[match] = item[match];
+        bulk.find(query).upsert().updateOne(update);
+      });
+      bulk.execute(function (err, bulkres) {
+        if (err) return reject(err);
+        resolve(bulkres);
       });
     });
-    cb();
-  };
+  }
+
 }());

@@ -8,6 +8,8 @@
   var Canvas = require('canvas');
   var fs = require('fs');
   var _ = require('lodash');
+  var PNG = require('pngjs').PNG;
+  var Promise = require('bluebird');
 
   var base64encode = require('base64-stream').Encode;
   var base64decode = require('base64-stream').Decode;
@@ -20,26 +22,36 @@
   var logger;
   var cacheClient;
 
-  var readFile = function (room, png) {
 
-    var lena = fs.readFileSync(png);
-    var img = new Image();
-    img.src = lena;
+  var readFromFileAsync = function (room, png) {
+    return new Promise(function (resolve, reject) {
+      fs.createReadStream(png)
+        .pipe(new PNG())
+        .on('parsed', function () {
+          var self = this;
+          var pixels = [];
 
-    var canvas = new Canvas(img.width, img.height);
-    var ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, img.width, img.height);
+          var processPixels = function (room) {
+            for (var x = 0; x < self.width; x++) {
+              for (var y = 0; y < self.height; y++) {
+                var idx = (self.width * y + x) << 2;
+                pixels.push({
+                  x: x,
+                  y: y,
+                  r: self.data[idx],
+                  g: self.data[idx + 1],
+                  b: self.data[idx + 2],
+                  image: png.split("/").pop(),
+                  room: room
+                });
+              }
+            }
+          };
 
-    var pixels = [];
-
-    for (var x = 0; x < img.width; x++) {
-      for (var y = 0; y < img.height; y++) {
-        var d = ctx.getImageData(x, y, 1, 1);
-        pixels.push({x: x, y: y, r: d.data[0], g: d.data[1], b: d.data[2], image: png.split("/").pop(), room: room});
-      }
-    }
-
-    return pixels;
+          processPixels('room');
+          resolve(pixels);
+        });
+    });
   };
 
   var getCacheClient = function () {
@@ -108,17 +120,18 @@
             };
 
             if (!Array.isArray(rawPixels) || rawPixels.length === 0) {
-              rawPixels = readFile('raw', LENA_PNG);
-              Pixel.collection
-                .insert(rawPixels, {multi: true})
-                .then(function () {
-                  logger.info('Retrieving from file. raw forced');
-                  return persist(rawPixels);
-                })
-                .catch(function (error) {
-                  logger.error('(reloadImageForRoom) Error inserting pixels for raw image. \n%s', error);
-                  reject(error);
-                });
+              readFromFileAsync('raw', LENA_PNG).then(function (rawPixels) {
+                Pixel.collection
+                  .insert(rawPixels, {multi: true})
+                  .then(function () {
+                    logger.info('Retrieving from file. raw forced');
+                    return persist(rawPixels);
+                  })
+                  .catch(function (error) {
+                    logger.error('(reloadImageForRoom) Error inserting pixels for raw image. \n%s', error);
+                    reject(error);
+                  });
+              });
             }
             else {
               return persist(rawPixels);
@@ -152,7 +165,7 @@
           .then(function (pixels) {
             if (!Array.isArray(pixels) || pixels.length === 0) {
               logger.error('reloadBuffer selection: ', JSON.stringify(selection, null, 2));
-              reject('reloadBuffer');
+              reject(new Error('reloadBuffer'));
             } else {
               resolve({
                 room: room,
@@ -213,7 +226,7 @@
 
                       var id = ctx.createImageData(1, 1);
                       var d = id.data;
-                      validate(_pixels, d, ctx, id);
+                      if (validate) validate(_pixels, d, ctx, id);
                       var stream = canvas.syncPNGStream();
 
                       //PassThrough pipe
@@ -228,7 +241,7 @@
                     };
 
                     if (!Array.isArray(pixels) || pixels.length === 0) {
-                      reloadImageForRoom(room).then(extractPixels).then(pipePixels);
+                      reloadImageForRoom(room).then(extractPixels).then(pipePixels).catch(reject);
                     }
                     else {
                       logger.info('Retrieving ' + cache_key + ' from database. ' + pixels.length);

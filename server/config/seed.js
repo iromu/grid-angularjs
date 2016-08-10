@@ -44,6 +44,7 @@ var readFromFileAsync = function (png) {
         processPixels('grey');
         processPixels('raw');
         processPixels('invert');
+        processPixels('reduce');
         resolve(pixels);
       });
   });
