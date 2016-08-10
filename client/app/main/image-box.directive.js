@@ -85,15 +85,22 @@
         };
 
         vm.pixelsReceived += pixels.length;
+
         if (vm.room === 'reduce') {
-          onWorkDone(pixels.reduce(function (a, b) {
+          var color = pixels.reduce(function (previousValue, currentValue) {
             return {
-              x: a.x,
-              y: a.y,
-              r: a.r + b.r,
-              g: a.g + a.g,
-              b: a.b + a.b
+              r: previousValue.r + currentValue.r,
+              g: previousValue.g + currentValue.g,
+              b: previousValue.b + currentValue.b
             };
+          });
+
+          color.r = Math.round(color.r / pixels.length);
+          color.g = Math.round(color.g / pixels.length);
+          color.b = Math.round(color.b / pixels.length);
+
+          onWorkDone(_.map(pixels, function (pixel) {
+            return {_id: pixel._id, x: pixel.x, y: pixel.y, r: color.r, g: color.g, b: color.b, s: null};
           }));
         } else {
           onWorkDone(_.map(pixels, job));
@@ -232,6 +239,10 @@
     vm.init = function () {
       vm.toggleButtonText = 'Join';
       vm.loadPreview();
+
+      $scope.$on('startAll', function (event, data) {
+        vm.toggleNetwork();
+      });
     };
   }
 }());

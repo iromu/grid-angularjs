@@ -22,7 +22,7 @@
 
     socket.on('pixel:buffer:request', function (_room) {
       var room = _room;
-      logger.debug('[%s] pixel:buffer:request room %s', socket.id, room);
+      //logger.debug('[%s] pixel:buffer:request room %s', socket.id, room);
 
       service.getPixels(room)
         .then(function (data) {
@@ -31,7 +31,7 @@
             io.to(room).emit('pixel:buffer:reload', {image: data.image, room: room});
           }
           if (data.hasOwnProperty('pixels')) {
-            logger.debug('[%s] pixel:buffer:response %s', data.room, JSON.stringify(_.size(data.pixels), null, 2));
+            //logger.debug('[%s] pixel:buffer:response %s', data.room, JSON.stringify(_.size(data.pixels), null, 2));
             socket.emit('pixel:buffer:response', data);
           }
         })
@@ -44,17 +44,17 @@
 
     socket.on('pixel:put', function (request) {
       var room = request.room;
-      logger.debug('[%s] pixel:put %s', socket.id, JSON.stringify(_.size(request.pixels), null, 2));
+      //logger.debug('[%s] pixel:put %s', socket.id, JSON.stringify(_.size(request.pixels), null, 2));
 
 
       var broadcast = function () {
         var pixelSize = _.size(request.pixels);
-        logger.debug('[%s] pixel:batch:update %s', room, JSON.stringify(pixelSize, null, 2));
+        //logger.debug('[%s] pixel:batch:update %s', room, JSON.stringify(pixelSize, null, 2));
         socket.to(room).emit('pixel:batch:update', {room: request.room, pixels: request.pixels});
         socket.emit('pixel:put:end', {pixelSize: pixelSize, room: request.room});
       };
 
-      if (request.pixels) {
+      if (Array.isArray(request.pixels)) {
         service
           .bulkUpdate(request.pixels)
           .then(broadcast)
