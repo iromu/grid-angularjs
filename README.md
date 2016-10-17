@@ -25,15 +25,24 @@
 
 # Distributed Computing Grid
 
-      
-
-## Running
-
 Server sends to each socket.io websocket client a region of the
 image for processing. Then the result is stored and shared within the network.<br>
 For supporting high concurrency, the backend distributes events between redis instances,
  handled by socket.io-redis. Nodes can be added anytime, at any layer.
       
+
+## Running docker
+
+    $ eval $(docker-machine env default)
+    $ docker-compose up --build -d
+    $ docker-compose scale web=2
+
+    
+Exposed port '88'
+      
+
+## Running from source
+
 ### Prepare enviroment
   
 #### OSX

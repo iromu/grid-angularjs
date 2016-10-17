@@ -9,10 +9,13 @@
   <p class="card-text">Received <strong ng-bind="vm.pixelsExternalProcessed | number:0"></strong> Pixels</p>
 
   <p class="help-block" ng-bind="vm.description"></p>
-  <button type="button" name="toggleButton"
-          class="btn btn-success btn-block animate-hide"
-          ng-class="vm.toggleButtonClass"
-          ng-click="vm.toggleNetwork()">{{vm.toggleButtonText}}
-  </button>
+  <div class="input-group">
+    <button type="button" name="toggleButton"
+            class="form-control btn btn-success btn-block animate-hide"
+            ng-class="vm.toggleButtonClass"
+            ng-click="vm.toggleNetwork()">{{vm.toggleButtonText}}
+    </button>
+  </div>
+
 
 </div>

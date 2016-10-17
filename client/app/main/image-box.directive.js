@@ -29,11 +29,11 @@
 
   }
 
-  ImageBoxController.$inject = ['$scope', '$log', '$http', '$timeout', 'pixelSocketService', 'canvasViewService'];
+  ImageBoxController.$inject = ['$scope', '$log', '$http', '$timeout', 'pixelSocketService', 'canvasViewService', 'pixelWorkerService'];
 
-  function ImageBoxController($scope, $log, $http, $timeout, pixelSocketService, canvasViewService) {
+  function ImageBoxController($scope, $log, $http, $timeout, pixelSocketService, canvasViewService, pixelWorkerService) {
     var vm = this;
-
+    vm.loop = true;
     vm.pixelsReceived = 0;
     vm.maxWorkers = 2;
     vm.pixelsExternalProcessed = 0;
@@ -48,135 +48,49 @@
     vm.pixelSocketServiceListening = false;
 
 
-    var process = function (pixels) {
+    vm.joinNetwork = function () {
 
-      $log.debug('process');
-
-      if (Array.isArray(pixels) && pixels.length > 0) {
-        $log.debug('process Array');
-
-        var job = function (pixel) {
-          if (vm.room === 'grey') {
-            pixel.s = Math.round((pixel.r + pixel.g + pixel.b) / 3);
-            pixel.r = pixel.s;
-            pixel.g = pixel.s;
-            pixel.b = pixel.s;
-          } else if (vm.room === 'invert') {
-            pixel.s = null;
-            pixel.r = 255 - pixel.r;
-            pixel.g = 255 - pixel.g;
-            pixel.b = 255 - pixel.b;
+      function notifyUpdate(response) {
+        if (response.done) {
+          if (!vm.reloading) {
+            vm.reloading = true;
+            vm.loadPreview();
+            //vm.toggleNetwork();
           }
-          return pixel;
-        };
-
-        var onWorkDone = function (pixels) {
-          if (vm.room === 'grey') {
-            vm.putPixels(vm.room, compressGrey(pixels));
-          } else {
-            vm.putPixels(vm.room, pixels);
-          }
-
+        } else {
+          var pixels = response.pixels;
+          vm.pixelsExternalProcessed += pixels.length;
+          vm.pixelsExternalProcessedPercent = vm.pixelsExternalProcessed / 100;
           canvasViewService.pixelBatchUpdate(vm.preview, _.map(pixels, function (pixel) {
             pixel.g = pixel.g + 10;
             return pixel;
           }));
+        }
 
-        };
+      }
 
-        vm.pixelsReceived += pixels.length;
-
-        if (vm.room === 'reduce') {
-          var color = pixels.reduce(function (previousValue, currentValue) {
-            return {
-              r: previousValue.r + currentValue.r,
-              g: previousValue.g + currentValue.g,
-              b: previousValue.b + currentValue.b
-            };
-          });
-
-          color.r = Math.round(color.r / pixels.length);
-          color.g = Math.round(color.g / pixels.length);
-          color.b = Math.round(color.b / pixels.length);
-
-          onWorkDone(_.map(pixels, function (pixel) {
-            return {_id: pixel._id, x: pixel.x, y: pixel.y, r: color.r, g: color.g, b: color.b, s: null};
-          }));
-        } else {
-          onWorkDone(_.map(pixels, job));
+      function onWorkDone(response) {
+        $log.info('Done worker RESPONSE: ' + response);
+        if (!vm.reloading) {
+          vm.reloading = true;
+          vm.loadPreview();
+          //vm.toggleNetwork();
         }
       }
-    };
 
-    var addListeners = function () {
+      function onError(error) {
+        $log.error('pixelWorkerService() ERROR : ' + error);
+      }
 
-      pixelSocketService.bindArray(vm.totalNodes);
-
-      pixelSocketService.onPixelBufferReload(vm.room, function (data) {
-        vm.imageName = data.image;
-        vm.loadPreview();
-      });
-
-      pixelSocketService.onPixelBatchUpdate(vm.room, function (data) {
-        var pixels = data.pixels;
-        if (Array.isArray(pixels) && pixels.length > 0) {
-          if (data.selection)canvasViewService.drawSelection(vm.overlay, data.selection, '#AAFFCC', true);
-          vm.pixelsExternalProcessed += pixels.length;
-          vm.pixelsExternalProcessedPercent = vm.pixelsExternalProcessed / 100;
-          //canvasViewService.drawSelection(vm.overlay, data.selection, 'cyan');
-          canvasViewService.pixelBatchUpdate(vm.preview, pixels);
-
-        } else {
-          $log.warn('onPixelBatchUpdate() empty array received.');
-        }
-      });
-
-      pixelSocketService.onPixelBufferResponse(vm.room, function (data) {
-        var pixels = data.pixels;
-        if (Array.isArray(pixels) && pixels.length > 0) {
-          if (data.selection)canvasViewService.drawSelection(vm.overlay, data.selection, '#CCFFCC', true);
-          process(pixels);
-        } else {
-          $log.warn('onPixelBufferResponse() empty array received for processing.');
-          $timeout(vm.loadPixelBuffer, 100);
-        }
-      });
-
-      pixelSocketService.onPutPixelsEnd(vm.room, function (data) {
-        $timeout(vm.loadPixelBuffer, 100);
-      });
-
-      pixelSocketService.onJoinNetwork(vm.room, function (room) {
-        vm.loadPixelBuffer();
-      });
-
-      vm.pixelSocketServiceListening = true;
+      pixelWorkerService.startWork({room: vm.room, loop: vm.loop}).then(onWorkDone, onError, notifyUpdate);
 
     };
 
-    vm.joinNetwork = function () {
-      pixelSocketService.joinNetwork(vm.room);
-    };
     vm.leaveNetwork = function () {
-      if (vm.stopRequestingBuffer === false) {
-        pixelSocketService.leaveNetwork(vm.room);
-      }
-    };
-    vm.loadPixelBuffer = function () {
-      if (vm.stopRequestingBuffer === false) {
-        pixelSocketService.requestPixelBuffer(vm.room);
-      }
+      pixelWorkerService.stopWork(vm.room);
     };
 
-    function compressGrey(pixels) {
-      return pixels.map(function (pixel) {
-        return {_id: pixel._id, x: pixel.x, y: pixel.y, s: pixel.s};
-      });
-    }
 
-    vm.putPixels = function (room, pixels) {
-      pixelSocketService.putPixels({room: room, pixels: pixels});
-    };
 
     $scope.$on('$destroy', function () {
       $log.warn('$destroy main');
@@ -185,31 +99,16 @@
       pixelSocketService.unsync();
     });
 
-    vm.loadPreview = function () {
-
-      $log.warn('loadPreview before loading preview room: ' + vm.room);
-      vm.stopRequestingBuffer = true;
-
-      vm.pixelsReceived = 0;
-      vm.pixelsExternalProcessed = 0;
-      vm.pixelsExternalProcessedPercent = 0;
+    vm.loadPreview = function (cb) {
 
       canvasViewService.clearImage(vm.preview);
-      canvasViewService.clearImage(vm.overlay);
-
       canvasViewService.loadImage(vm.preview, 'api/pixels/preview/' + vm.room, function () {
-
-        if (!vm.pixelSocketServiceListening) {
-          addListeners();
+        vm.reloading = false;
+        vm.pixelsExternalProcessed = 0;
+        vm.pixelsExternalProcessedPercent = 0;
+        if (cb) {
+          cb();
         }
-        if (vm.joined === true) {
-          $log.warn('loadPixelBuffer after loading snapshot');
-          vm.stopRequestingBuffer = false;
-          $timeout(vm.loadPixelBuffer, 1000);
-        } else {
-          vm.joinNetwork();
-        }
-
       });
 
     };

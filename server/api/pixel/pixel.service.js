@@ -10,6 +10,7 @@
 
   var logger = require('../../logging').getLogger();
   var pixelRepository = require('./pixel.repository')(logger);
+  var pixelSeed = require('./pixel.seed')(logger);
 
 
   var store = {};
@@ -70,7 +71,7 @@
 
     if (_.isEmpty(Lock.get(room).index.available)) {
       Lock.get(room).index.available = Array.apply(null, {length: 100}).map(Number.call, Number);
-      return pixelRepository.reloadImageForRoom(room);
+      return pixelSeed.reloadImageForRoom(room);
     } else {
       var index = Lock.get(room).index.available.splice(_.random(Lock.get(room).index.available.length - 1), 1)[0];
       var selection = calcWindowSlice(index, width, height, 10);
