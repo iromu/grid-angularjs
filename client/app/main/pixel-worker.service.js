@@ -173,12 +173,12 @@
               worker.postMessage(data); // Send data to our worker.
             } else {
               $log.warn('onPixelBufferResponse() empty array received for processing.');
-              loadPixelBuffer(data.room, data.image);
+              loadPixelBuffer(room, data.image);
             }
           });
 
           pixelSocketService.onPutPixelsEnd(room, function (data) {
-            loadPixelBuffer(data.room, data.image);
+            loadPixelBuffer(room, data.image);
           });
 
           pixelSocketService.onJoinNetwork(room, function (data) {
