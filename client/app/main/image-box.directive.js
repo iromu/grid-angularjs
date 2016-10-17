@@ -33,7 +33,7 @@
 
   function ImageBoxController($scope, $log, $http, $timeout, pixelSocketService, canvasViewService, pixelWorkerService) {
     var vm = this;
-
+    vm.loop = true;
     vm.pixelsReceived = 0;
     vm.maxWorkers = 2;
     vm.pixelsExternalProcessed = 0;
@@ -82,7 +82,7 @@
         $log.error('pixelWorkerService() ERROR : ' + error);
       }
 
-      pixelWorkerService.startWork({room: vm.room, loop: true}).then(onWorkDone, onError, notifyUpdate);
+      pixelWorkerService.startWork({room: vm.room, loop: vm.loop}).then(onWorkDone, onError, notifyUpdate);
 
     };
 
@@ -91,9 +91,6 @@
     };
 
 
-    vm.putPixels = function (room, pixels) {
-      pixelSocketService.putPixels({room: room, pixels: pixels});
-    };
 
     $scope.$on('$destroy', function () {
       $log.warn('$destroy main');
@@ -109,7 +106,9 @@
         vm.reloading = false;
         vm.pixelsExternalProcessed = 0;
         vm.pixelsExternalProcessedPercent = 0;
-        cb();
+        if (cb) {
+          cb();
+        }
       });
 
     };
