@@ -11,8 +11,6 @@ var PNG = require('pngjs').PNG;
 var fs = require('fs');
 
 var Pixel = require('../api/pixel/pixel.model');
-var User = require('../api/user/user.model');
-
 var LENA_PNG = __dirname + '/../api/pixel/lena.png';
 var BABOON_PNG = __dirname + '/../api/pixel/baboon.png';
 
@@ -63,26 +61,8 @@ var init = function () {
     });
   };
 
-  var loadUsers = function () {
-    return User.find({}).remove().exec().then(function () {
-      console.log('populating users');
-      return User.create({
-          provider: 'local',
-          name: 'Test User',
-          email: 'test@test.com',
-          password: 'test'
-        }, {
-          provider: 'local',
-          role: 'admin',
-          name: 'Admin',
-          email: 'admin@admin.com',
-          password: 'admin'
-        }
-      );
-    });
-  };
 
-  return Promise.all([loadPixels(), loadUsers()]);
+  return Promise.all([loadPixels() ]);
 
 };
 

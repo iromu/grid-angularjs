@@ -1,9 +1,11 @@
 node_modules
 public
 .tmp
+.sass-cache
 .idea
 *.iml
 client/bower_components
+client/index.html
 dist
 coverage
 /server/config/local.env.js

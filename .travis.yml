@@ -1,27 +1,12 @@
 language: node_js
 node_js:
-  - '4'
+  - 4.4.6
+matrix:
+  fast_finish: true
+  allow_failures:
+    - node_js: 5.12.0
 before_script:
-  - npm install -g bower grunt-cli
-  - npm install -g istanbul
+  - npm install -g gulp-cli
+  - gem install sass
   - bower install
-script: "npm run-script coverage"
-services:
-  - mongodb
-  - redis-server
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - libcairo2-dev
-      - libjpeg8-dev
-      - libpango1.0-dev
-      - libgif-dev
-      - g++-4.8
-env:
-  - CXX=g++-4.8
-before_install:
-  - if [[ $TRAVIS_NODE_VERSION == 0.8 ]]; then npm install -g npm@1.4.28; fi
-  - npm explore npm -g -- npm install node-gyp@latest
-sudo: false
+services: mongodb

@@ -1,9 +1,8 @@
 'use strict';
 
-var mongoose = require('mongoose'),
-  Schema = mongoose.Schema;
+import mongoose from 'mongoose';
 
-var PixelSchema = new Schema({
+var PixelSchema = new mongoose.Schema({
   room: String,
   image: String,
   x: {type: Number, index: true},
@@ -11,8 +10,8 @@ var PixelSchema = new Schema({
   r: Number,
   g: Number,
   b: Number,
-  s: Number,//shades of grey
-  a: Number,//alpha
+  s: Number, //shades of grey
+  a: Number, //alpha
   processed: {type: Boolean, index: true},
   locked: {type: Boolean, index: true}
 });
@@ -23,6 +22,7 @@ PixelSchema.index(
   {image: 1, room: 1}
 );
 
-PixelSchema.set('redisCache', true)
-PixelSchema.set('expires', 300)
-module.exports = mongoose.model('Pixel', PixelSchema);
+//PixelSchema.set('redisCache', true);
+//PixelSchema.set('expires', 300);
+
+export default mongoose.model('Pixel', PixelSchema);

@@ -1,118 +1,46 @@
-/* global process:true */
+/**
+ * Main application file
+ */
 
 'use strict';
 
-//add timestamps in front of log messages
-require('console-stamp')(console, 'UTC:yyyy-mm-dd\'T\'HH:MM:ss.l\'Z\'');
-
-
-var config = require('./config/environment');
-var sticky = require('sticky-cluster');
-var logging = require('./logging');
-var async = require('async');
-var express = require('express');
-
-var config = require('./config/environment');
-
-// if process.env.NODE_ENV has not been set, default to development
-var NODE_ENV = process.env.NODE_ENV || 'development';
-var mongoose = require('mongoose');
+import express from 'express';
+import mongoose from 'mongoose';
 mongoose.Promise = require('bluebird');
+import config from './config/environment';
+import http from 'http';
 
-var app;
-// Set up logging
-var logger = logging.createLogger({
-  // log directory
-  dir: "CONSOLE",
-  // for valid log levels, see
-  // [bunyan docs](https://github.com/trentm/node-bunyan#levels)
-  level: "debug"
+// Connect to MongoDB
+mongoose.connect(config.mongo.uri, config.mongo.options);
+mongoose.connection.on('error', function(err) {
+  console.error(`MongoDB connection error: ${err}`);
+  process.exit(-1); // eslint-disable-line no-process-exit
 });
 
-
-function startFn(callback) {
-  app = express();
-  var server = require('http').createServer(app);
-
-
-  var socketio = require('socket.io')(server, {
-    serveClient: (config.env === 'production') ? false : true,
-    path: '/socket.io-client'
-  });
-  require('./config/socketio')(socketio, logger);
-
-
-  require('./config/express')(app);
-  require('./routes')(app);
-
-
-  mongoose.connect(config.mongo.uri, config.mongo.options);
-
-  var conn = mongoose.connection;
-  conn.on('error', logger.error.bind(logger, 'mongo connection error:'));
-
-  conn.once('open', function () {
-    logger.info('mongodb connected');
-    require('./components/redis').mongooseRedisCache(mongoose, logger);
-
-    // Populate DB with sample data always
-    if (config.seedDB) {
-      logger.warn('Populate DB with sample data');
-
-      require('./config/seed').init().then(
-        function () {
-          logger.warn('Done populating DB with sample data');
-          callback(server);
-        }
-      );
-      var redisClient = require('./components/redis').getRedisClient({label: 'Purge'});
-      logger.debug('Purge all keys ' + '*');
-      redisClient.keys('*', function (err, keys) {
-        if (keys && keys.length < 1) return false;
-
-        redisClient.del(keys, function (err, count) {
-          count = count || 0;
-          return count;
-        });
-      });
-
-    }
-    else {
-      callback(server);
-    }
-  });
-
+// Populate databases with sample data
+if(config.seedDB) {
+  require('./config/seed');
 }
 
-function run(cluster) {
+// Setup server
+var app = express();
+var server = http.createServer(app);
+var socketio = require('socket.io')(server, {
+  serveClient: config.env !== 'production',
+  path: '/socket.io-client'
+});
+require('./config/socketio').default(socketio);
+require('./config/express').default(app);
+require('./routes').default(app);
 
-
-  // In production environment, create a cluster
-  if (NODE_ENV === 'production' || Boolean(config.cluster) || cluster) {
-
-    sticky(startFn, {
-      concurrency: parseInt(process.env.WEB_CONCURRENCY, require('os').cpus().length),
-      port: config.port,
-      debug: (NODE_ENV === 'development')
-    });
-
-  } else {
-    startFn(function (server) {
-      // Start server
-      server.listen(config.port, config.ip, function () {
-        console.log('Express server listening on %d, in %s mode', config.port, NODE_ENV);
-      });
-    });
-  }
-}
-
-
-function getApp() {
-  if (!app)startFn(function (server) {
+// Start server
+function startServer() {
+  app.angularFullstack = server.listen(config.port, config.ip, function() {
+    console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
   });
-  return app;
 }
 
+setImmediate(startServer);
 
-exports.getApp = getApp;
-exports.run = run;
+// Expose app
+exports = module.exports = app;

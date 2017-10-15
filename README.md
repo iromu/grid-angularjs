@@ -1,80 +1,28 @@
-# grid angular.js
+# angular-fullstack-test2
 
-[![Build Status][travis-image]][travis-url]
-[![Coverage Status][coveralls-image]][coveralls-url]
-[![Dependency Status][dep-image]][dep-url]
-[![Dev Dependency Status][dev-dep-image]][dev-dep-url]
-[![Heroku][heroku-image]][heroku-url]
+This project was generated with the [Angular Full-Stack Generator](https://github.com/DaftMonk/generator-angular-fullstack) version 4.1.0.
 
-[travis-image]: https://travis-ci.org/iromu/grid-angularjs.svg?branch=develop
-[travis-url]: https://travis-ci.org/iromu/grid-angularjs
+## Getting Started
 
-[coveralls-image]: https://coveralls.io/repos/iromu/grid-angularjs/badge.svg?branch=develop
-[coveralls-url]: https://coveralls.io/r/iromu/grid-angularjs?branch=develop
+### Prerequisites
 
-[dep-image]: https://david-dm.org/iromu/grid-angularjs.svg
-[dep-url]: https://david-dm.org/iromu/grid-angularjs#info=dependencies&view=table
+- [Git](https://git-scm.com/)
+- [Node.js and npm](nodejs.org) Node >= 4.x.x, npm >= 2.x.x
+- [Gulp](http://gulpjs.com/) (`npm install --global gulp`)
+- [MongoDB](https://www.mongodb.org/) - Keep a running daemon with `mongod`
 
-[dev-dep-image]: https://david-dm.org/iromu/grid-angularjs/dev-status.svg
-[dev-dep-url]: https://david-dm.org/iromu/grid-angularjs#info=devDependencies&view=table
+### Developing
 
-[heroku-image]: https://heroku-badge.herokuapp.com/?app=grid-angularjs
-[heroku-url]: https://grid-angularjs.herokuapp.com
+1. Run `npm install` to install server dependencies.
 
+2. Run `mongod` in a separate shell to keep an instance of the MongoDB Daemon running
 
+3. Run `gulp serve` to start the development server. It should automatically open the client in your browser when ready.
 
-# Distributed Computing Grid
+## Build & development
 
-Server sends to each socket.io websocket client a region of the
-image for processing. Then the result is stored and shared within the network.<br>
-For supporting high concurrency, the backend distributes events between redis instances,
- handled by socket.io-redis. Nodes can be added anytime, at any layer.
-      
+Run `gulp build` for building and `gulp serve` for preview.
 
-## Running docker
+## Testing
 
-    $ eval $(docker-machine env default)
-    $ docker-compose up --build -d
-    $ docker-compose scale web=2
-
-    
-Exposed port '88'
-      
-
-## Running from source
-
-### Prepare enviroment
-  
-#### OSX
-  
-  Install XQuartz, then...
-
-    $ brew install cairo
-    
-   Set env
-   
-    $ export PKG_CONFIG_PATH=/opt/X11/lib/pkgconfig
-    
-#### Linux
-
-    $ sudo apt-get install libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-
-  
-  
-### Install
-  
-      $ npm install -g bower grunt-cli
-    
-      $ npm install
-    
-      $ bower install
-  
-### Run embedded server
-
-You need a running local mongodb instance. (For OSX, 'brew install mongodb')
-
-    $ grunt serve
-  
-### Open location in browser
-
-    http://localhost:9000
+Running `npm test` will run the unit tests with karma.
